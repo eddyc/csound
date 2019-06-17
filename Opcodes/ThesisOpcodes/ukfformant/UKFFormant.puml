@@ -1,0 +1,165 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+class KalmanFilter {
+	+KalmanFilter(CSOUND* csound, Vec& initFreqs, Vec& initBands, size_t ksmps, size_t fs)
+	-K : Mat
+	-PColumn : Mat
+	-PPred : Mat
+	-PQ : Mat
+	-Pcov : Mat
+	-PxP : Mat
+	-Qw : Mat
+	-exSigmaPtMat : Mat
+	-temp : Mat
+	-wSigmaPts_xmat : Mat
+	-wSigmaPts_zmat : Mat
+	-xPred : Mat
+	-xPredSigmaPts : Mat
+	-zPredSigmaPts : Mat
+	-scaledSymmetricSigmaPts : ScaledSymmetricSigmaPoints
+	-ukfRigollRecursion : UKFRigollRecursion
+	-PxzPred : Vec
+	-exSigmaPt : Vec
+	-ezSigmaPtMat : Vec
+	-vBuffer : Vec
+	-xEst : Vec
+	-xQ : Vec
+	-xhat : Vec
+	-M : double
+	-alpha : double
+	-beta : double
+	-kappa : double
+	-noises : double
+	-p : double
+	-vNoise : double
+	-wNoise : double
+	-Fs : size_t
+	+process(Vec& input, double nextSample, Vec& formantVecOut) : void
+}
+
+
+class Resampler {
+	+Resampler(CSOUND* csound, int inputVectorSize, int processVectorSize, int inputChannelCount, int outputChannelCount, double ratio)
+	-bufferedInput : Mat
+	-bufferedOutput : Mat
+	-processInput : Mat
+	-processOutput : Mat
+	-inputRingBuffer : RingBuffer<double>*
+	- : RingBuffer<double>**
+	-downRingBuffer : RingBuffer<float>*
+	- : RingBuffer<float>**
+	-downData : SRC_DATA
+	-upData : SRC_DATA
+	-upState : SRC_STATE*
+	- : SRC_STATE**
+	-inputDeinterlace : Vecf
+	-outputDeinterlace : Vecf
+	-outputf : Vecf
+	-processInputf : Vecf
+	-processOutputf : Vecf
+	-errorDown : int
+	-errorUp : int
+	+copyFloatToVector(float* input, Vec output) : void
+	+copyVectorToFloat(Vec input, float* output) : void
+	+copyVectorToFloat(Vec input, int stride, int offset, float* output) : void
+	+process(Mat& input, Mat& output, function<void(Mat&in,Mat&out)> resampledProcess) : void
+	+resample(Mat& input, Mat& output, function<void(Mat&in,Mat&out)> resampledProcess) : void
+}
+
+
+class ScaledSymmetricSigmaPoints {
+	+ScaledSymmetricSigmaPoints(size_t p)
+	+p : Matrix<double>
+	+p2 : Matrix<double>
+	+xPts : Matrix<double>
+	+wPts : Vector<double>
+	+nsp : size_t
+	+operator()(const Vector<double>& x, const Matrix<double>& pIn, const double alpha, const double beta, double kappa) : tuple<Matrix<double > , Vector<double > , size_t >&
+}
+
+
+class UKFFormant {
+	-cs : CSOUND*
+	-kalmanFilter : KalmanFilter
+	-formantMatOut : Mat
+	-outBands : Mat
+	-outFreqs : Mat
+	-resamplerOut : Mat
+	-formantMatOutf : Matf
+	-resampler : Resampler
+	-pBuffer : RingBuffer<double>
+	-buffer : Vec
+	-filterTest : Vec
+	-formantBuffer : Vec
+	-initBands : Vec
+	-initFreqs : Vec
+	-input : Vec
+	-output : Vec
+	-pDoubleIn : Vec
+	-pDoubleOut : Vec
+	-pSamples : Vec
+	-vBuffer : Vec
+	-deinterlacer : Vecf
+	-inputResampledf : Vecf
+	-inputf : Vecf
+	-outputResampledf : Vecf
+	-outputf : Vecf
+	+_kperf() : int
+	-errorDown : int
+	-errorUp : int
+	+init() : int
+	+{static} init_(CSOUND* csound, UKFFormant* self) : int
+	+kperf() : int
+	+{static} kperf_(CSOUND* csound, UKFFormant* self) : int
+	-p : int
+	-Fs : size_t
+	+downSample(Vec& input, Vec& output, Mat& freqsOutput, Mat& bandsOutput, function<void(Vec&samplesIn,Vec&samplesOut,Mat&formantsOut)> process) : void
+	+process(Vec& input, double nextSample, Vec& formantVecOut) : void
+	+stridedCopy(double* input, int length, int stride, int offset, double* output) : void
+}
+
+
+class UKFRigollRecursion {
+	+UKFRigollRecursion(size_t M)
+	+operator()(StridedMatrix<double> xPredSigmaPts, size_t Fs) : Matrix<double >&
+	+A : Matrix<double>
+	+ahat : Matrix<double>
+	+ahatBuffer : Matrix<double>
+	+b : Matrix<double>
+	+c : Matrix<double>
+	+d : Matrix<double>
+	+M : size_t
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+KalmanFilter o-- ScaledSymmetricSigmaPoints
+
+
+KalmanFilter o-- UKFRigollRecursion
+
+
+UKFFormant o-- KalmanFilter
+
+
+UKFFormant o-- Resampler
+
+
+
+
+@enduml
