@@ -1,86 +1,99 @@
-# - Try to find Netcdf
-# Once done this will define
-#  NETCDF_FOUND - System has Netcdf
-#  NETCDF_INCLUDE_DIRS - The Netcdf include directories
-# NETCDF_C_LIBRARIES - The C libraries needed to use Netcdf
-# NETCDF_Fortran_LIBRARIES - The Fortran libraries needed to use Netcdf
-#  NETCDF_LIBRARIES - All the libraries needed to use Netcdf
-#  NETCDF_DEFINITIONS - Compiler switches required for using Netcdf
+# - Find NetCDF
+# Find the native NetCDF includes and library
+#
+#  NETCDF_INCLUDES    - where to find netcdf.h, etc
+#  NETCDF_LIBRARIES   - Link these libraries when using NetCDF
+#  NETCDF_FOUND       - True if NetCDF found including required interfaces (see below)
+#
+# Your package can require certain interfaces to be FOUND by setting these
+#
+#  NETCDF_CXX         - require the C++ interface and link the C++ library
+#  NETCDF_F77         - require the F77 interface and link the fortran library
+#  NETCDF_F90         - require the F90 interface and link the fortran library
+#
+# The following are not for general use and are included in
+# NETCDF_LIBRARIES if the corresponding option above is set.
+#
+#  NETCDF_LIBRARIES_C    - Just the C interface
+#  NETCDF_LIBRARIES_CXX  - C++ interface, if available
+#  NETCDF_LIBRARIES_F77  - Fortran 77 interface, if available
+#  NETCDF_LIBRARIES_F90  - Fortran 90 interface, if available
+#
+# Normal usage would be:
+#  set (NETCDF_F90 "YES")
+#  find_package (NetCDF REQUIRED)
+#  target_link_libraries (uses_f90_interface ${NETCDF_LIBRARIES})
+#  target_link_libraries (only_uses_c_interface ${NETCDF_LIBRARIES_C})
+#
+# Taken from: https://github.com/jedbrown/cmake-modules/blob/master/FindNetCDF.cmake
+#
+# Copyright Constantine Khroulev
+#           Jed Brown
+#           johnfettig
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice, this
+# list of conditions and the following disclaimer in the documentation and/or
+# other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.#
 
-# If we weren't given a hint via a CMake variable, check the environment.
-if(NOT NETCDF_DIR)
-  set(NETCDF_DIR $ENV{NETCDF})
-endif()
+if (NETCDF_INCLUDES AND NETCDF_LIBRARIES)
+  # Already in cache, be silent
+  set (NETCDF_FIND_QUIETLY TRUE)
+endif (NETCDF_INCLUDES AND NETCDF_LIBRARIES)
 
-find_path(NETCDF_INCLUDE_DIR netcdf.h
-          HINTS ${NETCDF_DIR}/include )
+find_path (NETCDF_INCLUDES netcdf.h
+  HINTS NETCDF_DIR ENV NETCDF_DIR)
 
-find_path(NETCDF_LIB_DIR NAMES libnetcdf.a libnetcdf.so
-          HINTS ${NETCDF_DIR}/lib ${NETCDF_DIR}/lib64 )
+find_library (NETCDF_LIBRARIES_C       NAMES netcdf)
+mark_as_advanced(NETCDF_LIBRARIES_C)
 
-find_path(NETCDF_FORTRAN_LIB_DIR NAMES libnetcdff.a libnetcdff.so
-          HINTS ${NETCDF_DIR}/lib ${NETCDF_DIR}/lib64 )
+set (NetCDF_has_interfaces "YES") # will be set to NO if we're missing any interfaces
+set (NetCDF_libs "${NETCDF_LIBRARIES_C}")
 
+get_filename_component (NetCDF_lib_dirs "${NETCDF_LIBRARIES_C}" PATH)
 
-find_file(NETCDF4_PAR_H netcdf_par.h
-          HINTS ${NETCDF_INCLUDE_DIR}
-          NO_DEFAULT_PATH )
+macro (NetCDF_check_interface lang header libs)
+  if (NETCDF_${lang})
+    find_path (NETCDF_INCLUDES_${lang} NAMES ${header}
+      HINTS "${NETCDF_INCLUDES}" NO_DEFAULT_PATH)
+    find_library (NETCDF_LIBRARIES_${lang} NAMES ${libs}
+      HINTS "${NetCDF_lib_dirs}" NO_DEFAULT_PATH)
+    mark_as_advanced (NETCDF_INCLUDES_${lang} NETCDF_LIBRARIES_${lang})
+    if (NETCDF_INCLUDES_${lang} AND NETCDF_LIBRARIES_${lang})
+      list (INSERT NetCDF_libs 0 ${NETCDF_LIBRARIES_${lang}}) # prepend so that -lnetcdf is last
+    else (NETCDF_INCLUDES_${lang} AND NETCDF_LIBRARIES_${lang})
+      set (NetCDF_has_interfaces "NO")
+      message (STATUS "Failed to find NetCDF interface for ${lang}")
+    endif (NETCDF_INCLUDES_${lang} AND NETCDF_LIBRARIES_${lang})
+  endif (NETCDF_${lang})
+endmacro (NetCDF_check_interface)
 
-#MESSAGE("PAR_H: ${NETCDF4_PAR_H}")
-find_library(NETCDF_C_LIBRARY NAMES libnetcdf.a netcdf HINTS ${NETCDF_LIB_DIR})
+NetCDF_check_interface (CXX netcdfcpp.h netcdf_c++)
+NetCDF_check_interface (F77 netcdf.inc  netcdff)
+NetCDF_check_interface (F90 netcdf.mod  netcdff)
 
-if(NOT NETCDF_FORTRAN_LIB_DIR)
-  MESSAGE(WARNING "Did not find netCDF Fortran library.")
-else()
-  find_library(NETCDF_Fortran_LIBRARY NAMES libnetcdff.a netcdff HINTS ${NETCDF_FORTRAN_LIB_DIR})
-endif()
-if(NOT NETCDF4_PAR_H)
-  set(NETCDF4_PARALLEL "no")
-  MESSAGE("NETCDF built without MPIIO")
-else()
-  set(NETCDF4_PARALLEL "yes")
-  MESSAGE("NETCDF built with hdf5 MPIIO support")
-endif()
+set (NETCDF_LIBRARIES "${NetCDF_libs}" CACHE STRING "All NetCDF libraries required for interface level")
 
-set(NETCDF_INCLUDE_DIRS ${NETCDF_INCLUDE_DIR} )
+# handle the QUIETLY and REQUIRED arguments and set NETCDF_FOUND to TRUE if
+# all listed variables are TRUE
+include (FindPackageHandleStandardArgs)
+find_package_handle_standard_args (NetCDF DEFAULT_MSG NETCDF_LIBRARIES NETCDF_INCLUDES NetCDF_has_interfaces)
 
-FIND_PACKAGE(HDF5 COMPONENTS C HL CONFIG)
-
-if(${HDF5_FOUND})
-  MESSAGE(STATUS "Adding hdf5 libraries ")
- set(NETCDF_C_LIBRARY ${NETCDF_C_LIBRARY} ${HDF5_LIBRARIES}
-                      ${SZIP_LIBRARIES} ${ZLIB_LIBRARIES})
-endif()
-
-# If netCDF was configured with DAP, it depends on libcurl.
-find_program(NETCDF_NC_CONFIG nc-config HINTS ${NETCDF_INCLUDE_DIR}/../bin)
-if(NETCDF_NC_CONFIG)
-  execute_process(COMMAND ${NETCDF_NC_CONFIG} --has-dap
-    OUTPUT_VARIABLE nc_config_output)
-  if(nc_config_output MATCHES yes)
-    find_package(CURL)
-    if(CURL_FOUND)
-      MESSAGE(STATUS "Adding curl libraries for netCDF DAP.")
-      set(NETCDF_C_LIBRARY ${NETCDF_C_LIBRARY} ${CURL_LIBRARIES})
-    else()
-      MESSAGE(WARNING "netCDF DAP appears enabled, but libcurl was not found.")
-    endif()
-  endif()
-endif()
-
-set(NETCDF_LIBRARIES ${NETCDF_Fortran_LIBRARY} ${NETCDF_C_LIBRARY})
-
-# Export variables so other projects can use them as well
-#  ie. if pio is added with add_subdirectory
-SET(NETCDF_INCLUDE_DIR ${NETCDF_INCLUDE_DIR} CACHE STRING "Location of NetCDF include files.")
-SET(NETCDF_LIBRARIES ${NETCDF_LIBRARIES} CACHE STRING "Link line for NetCDF.")
-
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set NETCDF_FOUND to TRUE
-# if all listed variables are TRUE
-# (Note that the Fortran interface is not always a separate library, so
-# don't require it to be found.)
-find_package_handle_standard_args(NETCDF  DEFAULT_MSG NETCDF_LIBRARIES
-                                  NETCDF_C_LIBRARY NETCDF_INCLUDE_DIR)
-
-mark_as_advanced(NETCDF_INCLUDE_DIR NETCDF_LIBRARIES NETCDF_C_LIBRARY NETCDF_Fortran_LIBRARY NETCDF4_PARALLEL )
+mark_as_advanced (NETCDF_LIBRARIES NETCDF_INCLUDES)

@@ -34,7 +34,7 @@ if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
       sofaconvert/main.cpp)
   set(CMAKE_CXX_STANDARD 17)
   find_package(HDF5)
-  find_package(NetCDF)
+  find_package(netCDF)
   find_library(ACCELERATE Accelerate)
 
   find_library(CS_LIB_PATH ${CS_LIB})
@@ -46,11 +46,11 @@ if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
                         ${CS_LIB_PATH}
                         ${HDF5_LIBRARIES}
                         ${ACCELERATE}
-                        ${NetCDF_LIBRARY})
+                        ${NETCDF_LIBRARIES})
   target_include_directories(sofaconvert
                              PRIVATE ${HDF5_INCLUDE_DIRS}
                                      ${ACCELERATE_H}
-                                     ${NetCDF_INCLUDE_DIR}
+                                     ${NETCDF_INCLUDES}
                                      sofaconvert
                                      common)
 endif()
@@ -296,11 +296,19 @@ if(BUILD_SOFA_OPCODES AND NOT EMSCRIPTEN)
   set(SOURCES
       sofa/SofaOpcodes.hpp
       sofa/SofaOpcodes.cpp
+      sofa/NetCDFFile.hpp
+      sofa/NetCDFFile.cpp
       sofa/module.cpp
       common/SignalData/Matrix.hpp
       common/SignalData/Matrix.cpp
       common/SignalData/Vector.hpp
       common/SignalData/Vector.cpp
+      common/SignalData/VectorMaths.hpp
+      common/SignalData/VectorMathsAccelerate.cpp
+      common/FrameBuffer.hpp
+      common/FrameBuffer.cpp
+      common/RingBuffer.hpp
+      common/RingBuffer.cpp
       sofa/utilities.cpp
       sofa/utilities.hpp)
 
@@ -309,12 +317,12 @@ if(BUILD_SOFA_OPCODES AND NOT EMSCRIPTEN)
   include_directories(/usr/local/include
                       ${LIBSAMPLERATE_INCLUDE_DIR}
                       ${ACCELERATE_H}
-                      ${NetCDF_INCLUDE_DIR})
+                      ${NETCDF_INCLUDES})
   target_link_libraries(sofa
                         ${LIBSAMPLERATE}
                         ${HDF5_LIBRARIES}
                         ${ACCELERATE}
-                        ${NetCDF_LIBRARY})
+                        ${NETCDF_LIBRARIES})
 
 endif()
 
