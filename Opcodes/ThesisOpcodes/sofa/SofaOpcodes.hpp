@@ -15,7 +15,7 @@ using namespace Signals;
 
 using namespace std;
 
-class DownsampleOpcode : public csnd::Plugin<1, 3> {
+class SofaOpcode : public csnd::Plugin<1, 3> {
   CSOUND *cs;
   ARRAYDAT *input;
   ARRAYDAT *output;
@@ -28,12 +28,12 @@ class DownsampleOpcode : public csnd::Plugin<1, 3> {
 
 public:
   int init();
-  static int init_(CSOUND *csound, DownsampleOpcode *self) {
+  static int init_(CSOUND *csound, SofaOpcode *self) {
     self->init();
     return OK;
   }
   int kperf();
-  static int kperf_(CSOUND *csound, DownsampleOpcode *self) {
+  static int kperf_(CSOUND *csound, SofaOpcode *self) {
     self->kperf();
     return OK;
   }
