@@ -60,7 +60,7 @@ int SofaOpcode::init()
     sofaToPolar(fileL, fileLMags, fileLPhases, tempInterlacedPolar);
     sofaToPolar(fileR, fileRMags, fileRPhases, tempInterlacedPolar);
 
-    Vec fileLMag0 = fileLMags[0];
+    Vec fileLMag0 = fileLMags[709];
     fileLMag0.print();
     new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, frameSize, hopSize, allocator);
 
@@ -72,12 +72,11 @@ void SofaOpcode::sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& tem
     DSPDoubleSplitComplex tempComplex;
     tempComplex.realp = &input.dataRealValues[0];
     tempComplex.imagp = &input.dataImagValues[0];
-    vDSP_ztocD(&tempComplex, 1, (DSPDoubleComplex*)temp.data, 2, n / 2 + 1);
-    vDSP_polarD(temp.data, 2, (double*)temp.data, 2, n / 2 + 1);
+    vDSP_ztocD(&tempComplex, 1, (DSPDoubleComplex*)temp.data, 2, temp.elementCount / 2);
+    vDSP_polarD(temp.data, 2, (double*)temp.data, 2, temp.elementCount / 2);
 
-    cblas_dcopy((UInt32)n / 2 + 1, &temp.data[0], 2, (double*)mags.data, 1);
-
-    cblas_dcopy((UInt32)n / 2 + 1, &temp.data[1], 2, (double*)phases.data, 1);
+    cblas_dcopy((UInt32)temp.elementCount / 2, &temp.data[0], 2, (double*)mags.data, 1);
+    cblas_dcopy((UInt32)temp.elementCount / 2, &temp.data[1], 2, (double*)phases.data, 1);
 }
 
 int SofaOpcode::kperf()
