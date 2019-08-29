@@ -18,8 +18,19 @@ using namespace Signals;
 
 using namespace std;
 typedef Vector<double> Vec;
+typedef Matrix<double> Mat;
+
+class SOFAFile {
+public:
+    int dimensionCount;
+    int variableCount;
+    int attributeCount;
+    int unlimitedDimensionsID;
+};
+
 class SofaOpcode : public csnd::Plugin<1, 1> {
     Vec input, output, window, inMags, inPhases, interlacedPolar;
+    Mat fileLMags, fileLPhases, fileRMags, fileRPhases;
     // CSOUND* cs;
     // ARRAYDAT* input;
     // ARRAYDAT* output;
@@ -36,6 +47,7 @@ class SofaOpcode : public csnd::Plugin<1, 1> {
 
     void realToPolar(Vec& inputFrame);
     void polarToReal(Vec& inputFrame);
+    void sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& temp);
 
 public:
     int init();
