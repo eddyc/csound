@@ -10,6 +10,7 @@
 #include "../common/SignalData/Matrix.hpp"
 #include "../common/SignalData/Vector.hpp"
 #include "NetCDFFile.hpp"
+#include <Accelerate/Accelerate.h>
 #include <plugin.h>
 #include <samplerate.h>
 
@@ -18,7 +19,7 @@ using namespace Signals;
 using namespace std;
 typedef Vector<double> Vec;
 class SofaOpcode : public csnd::Plugin<1, 1> {
-    Vec input, output, window;
+    Vec input, output, window, inMags, inPhases, interlacedPolar;
     // CSOUND* cs;
     // ARRAYDAT* input;
     // ARRAYDAT* output;
@@ -30,20 +31,22 @@ class SofaOpcode : public csnd::Plugin<1, 1> {
     // SRC_DATA srcData;
     NetCDFFile fileL, fileR;
     FrameBuffer<MYFLT> frameBuffer;
+    FFTSetupD fftSetup;
+    DSPDoubleSplitComplex zInput;
+
+    void realToPolar(Vec& inputFrame);
+    void polarToReal(Vec& inputFrame);
 
 public:
     int init();
     static int init_(CSOUND* csound, SofaOpcode* self)
     {
-        cout << "wtf" << endl;
-
         self->init();
         return OK;
     }
     int kperf();
     static int kperf_(CSOUND* csound, SofaOpcode* self)
     {
-        cout << "wtf" << endl;
         self->kperf();
         return OK;
     }
