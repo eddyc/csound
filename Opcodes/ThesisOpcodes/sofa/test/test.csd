@@ -13,7 +13,7 @@ instr 1
     ain vco2 0.1, 440
     ; ain diskin "input.wav"
     aout sofa ain
-    outs aout, aout
+    outs ain, ain
 endin
 
 schedule(1, 0, -1)

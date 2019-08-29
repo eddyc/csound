@@ -11,7 +11,7 @@ extern "C" {
 OENTRY localops[] = {{(char*)"sofa", sizeof(SofaOpcode), 0, 3, (char*)"a", (char*)"a",
                       (SUBR)SofaOpcode::init_, (SUBR)SofaOpcode::kperf_}};
 
-PUBLIC int csoundModuleInit_downsample(CSOUND* csound)
+PUBLIC int csoundModuleInit_sofa(CSOUND* csound)
 {
     int status = csound->AppendOpcode(
         csound, localops[0].opname, localops[0].dsblksiz, localops[0].flags,
@@ -30,7 +30,7 @@ PUBLIC int csoundModuleCreate(CSOUND* csound)
 
 PUBLIC int csoundModuleInit(CSOUND* csound)
 {
-    return csoundModuleInit_downsample(csound);
+    return csoundModuleInit_sofa(csound);
 }
 
 PUBLIC int csoundModuleDestroy(CSOUND* csound)

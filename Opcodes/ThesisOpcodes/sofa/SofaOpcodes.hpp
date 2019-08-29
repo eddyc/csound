@@ -16,8 +16,9 @@
 using namespace Signals;
 
 using namespace std;
-
-class SofaOpcode : public csnd::Plugin<1, 3> {
+typedef Vector<double> Vec;
+class SofaOpcode : public csnd::Plugin<1, 1> {
+    Vec input, output, window;
     // CSOUND* cs;
     // ARRAYDAT* input;
     // ARRAYDAT* output;
@@ -34,12 +35,15 @@ public:
     int init();
     static int init_(CSOUND* csound, SofaOpcode* self)
     {
+        cout << "wtf" << endl;
+
         self->init();
         return OK;
     }
     int kperf();
     static int kperf_(CSOUND* csound, SofaOpcode* self)
     {
+        cout << "wtf" << endl;
         self->kperf();
         return OK;
     }
