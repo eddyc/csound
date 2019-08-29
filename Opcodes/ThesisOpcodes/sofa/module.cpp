@@ -8,7 +8,7 @@
 
 #include "SofaOpcodes.hpp"
 extern "C" {
-OENTRY localops[] = {{(char*)"sofa", sizeof(SofaOpcode), 0, 3, (char*)"a", (char*)"a",
+OENTRY localops[] = {{(char*)"sofa", sizeof(SofaOpcode), 0, 3, (char*)"a", (char*)"aSk",
                       (SUBR)SofaOpcode::init_, (SUBR)SofaOpcode::kperf_}};
 
 PUBLIC int csoundModuleInit_sofa(CSOUND* csound)
@@ -23,7 +23,7 @@ PUBLIC int csoundModuleInit_sofa(CSOUND* csound)
 PUBLIC int csoundModuleCreate(CSOUND* csound)
 {
     csnd::plugin<SofaOpcode>((csnd::Csound*)csound, (const char*)"sofa",
-                             (const char*)"a", (const char*)"a",
+                             (const char*)"a", (const char*)"aSk",
                              (uint32_t)csnd::thread::ik);
     return 0;
 }

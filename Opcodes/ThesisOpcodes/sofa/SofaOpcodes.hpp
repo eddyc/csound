@@ -28,19 +28,10 @@ public:
     int unlimitedDimensionsID;
 };
 
-class SofaOpcode : public csnd::Plugin<1, 1> {
-    Vec input, output, window, inMags, inPhases, interlacedPolar;
-    Mat fileLMags, fileLPhases, fileRMags, fileRPhases;
-    // CSOUND* cs;
-    // ARRAYDAT* input;
-    // ARRAYDAT* output;
-    // float *inputBuffer, outputBuffer;
-    // int inputArgumentCount;
-    // int outputArgumentCount;
-    // int error;
-    // SRC_STATE* srcState;
-    // SRC_DATA srcData;
-    NetCDFFile fileL, fileR;
+class SofaOpcode : public csnd::Plugin<1, 3> {
+    Vec input, output, window, inMags, inPhases, interlacedPolar, frequencyScale;
+    Mat fileMags, filePhases;
+    NetCDFFile file;
     FrameBuffer<MYFLT> frameBuffer;
     FFTSetupD fftSetup;
     DSPDoubleSplitComplex zInput;

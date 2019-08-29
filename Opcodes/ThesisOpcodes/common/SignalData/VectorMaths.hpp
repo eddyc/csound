@@ -35,5 +35,6 @@ static T dotProduct(const Vector<T>& inputA, const Vector<T>& inputB);
 static void outerProduct(const Vector<T>& inputA, const Vector<T>& inputB, Matrix<T>& output);
 
 Vector<T>& ramp(const T start, const T increment);
+T max();
 
 #endif /* VectorMaths_hpp */

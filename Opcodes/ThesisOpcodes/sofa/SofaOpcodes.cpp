@@ -32,36 +32,27 @@ int SofaOpcode::init()
     zInput.realp = (double*)allocator(n / 2);
     zInput.imagp = (double*)allocator(n / 2);
     const int ksmps = cs->GetKsmps(cs);
+    double scalerStep = 1. / (n / 2 + 1);
 
     new (&input) Vec(((MYFLT*)inargs.data(0)), ksmps);
     new (&output) Vec(((MYFLT*)outargs.data(0)), ksmps);
     new (&window) Vec(allocator(frameSize), frameSize);
     new (&inMags) Vec(allocator(n / 2 + 1), n / 2 + 1);
     new (&inPhases) Vec(allocator(n / 2 + 1), n / 2 + 1);
+    new (&frequencyScale) Vec(allocator(n / 2 + 1), n / 2 + 1);
     new (&interlacedPolar) Vec(allocator(n + 2), n + 2);
+    STRINGDAT* filenameDat = (STRINGDAT*)(inargs.data(1));
+    string filename = filenameDat->data;
+    frequencyScale.ramp(1, -scalerStep);
 
     window.hanningWindow();
-    string filenameL =
-        "/Users/eddyc/Documents/Software/HRTF "
-        "Project/Mesh2HRTF/Meshes/KemarL/EvaluationGrid.sofa";
-    string filenameR =
-        "/Users/eddyc/Documents/Software/HRTF "
-        "Project/Mesh2HRTF/Meshes/KemarR/EvaluationGrid.sofa";
+    file = NetCDFFile(filename, "TF");
 
-    fileL = NetCDFFile(filenameL, "TF");
-    fileR = NetCDFFile(filenameR, "TF");
+    Mat tempInterlacedPolar(allocator(file.M * file.N * 2), file.M, file.N * 2);
+    new (&fileMags) Mat(allocator(file.M * file.N), file.M, file.N);
+    new (&filePhases) Mat(allocator(file.M * file.N), file.M, file.N);
+    sofaToPolar(file, fileMags, filePhases, tempInterlacedPolar);
 
-    Mat tempInterlacedPolar(allocator(fileL.M * fileL.N * 2), fileL.M, fileL.N * 2);
-    new (&fileLMags) Mat(allocator(fileL.M * fileL.N), fileL.M, fileL.N);
-    new (&fileLPhases) Mat(allocator(fileL.M * fileL.N), fileL.M, fileL.N);
-    new (&fileRMags) Mat(allocator(fileL.M * fileL.N), fileL.M, fileL.N);
-    new (&fileRPhases) Mat(allocator(fileL.M * fileL.N), fileL.M, fileL.N);
-
-    sofaToPolar(fileL, fileLMags, fileLPhases, tempInterlacedPolar);
-    sofaToPolar(fileR, fileRMags, fileRPhases, tempInterlacedPolar);
-
-    Vec fileLMag0 = fileLMags[709];
-    fileLMag0.print();
     new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, frameSize, hopSize, allocator);
 
     return OK;
@@ -77,6 +68,14 @@ void SofaOpcode::sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& tem
 
     cblas_dcopy((UInt32)temp.elementCount / 2, &temp.data[0], 2, (double*)mags.data, 1);
     cblas_dcopy((UInt32)temp.elementCount / 2, &temp.data[1], 2, (double*)phases.data, 1);
+
+    double max = mags.max();
+    mags.divide(max);
+
+    for (int i = 0; i < mags.rowCount; ++i) {
+        Vec row = mags[i];
+        Vec::multiply(row, frequencyScale, row);
+    }
 }
 
 int SofaOpcode::kperf()
@@ -85,13 +84,18 @@ int SofaOpcode::kperf()
 
     Vec in = Vec((MYFLT*)input.data, cs->GetKsmps(cs));
     Vec out = Vec((MYFLT*)output.data, cs->GetKsmps(cs));
+    int index = *((MYFLT*)inargs.data(2));
+
+    cout << index << endl;
+    Vec mags = fileMags[index];
+    Vec phi = filePhases[index];
 
     frameBuffer.process(in, out, [&](Vec inputFrame, Vec outputFrame) {
         Vec::multiply(inputFrame, window, inputFrame);
         realToPolar(inputFrame);
 
-        inMags.multiply(1.5);
-        inPhases.add(M_PI * 8);
+        Vec::multiply(inMags, mags, inMags);
+        Vec::add(inPhases, phi, inPhases);
 
         polarToReal(inputFrame);
         Vec::copy(inputFrame, outputFrame);

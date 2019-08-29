@@ -304,5 +304,21 @@ Vector<double>& Vector<double>::hanningWindow()
     return *this;
 }
 
+template <>
+float Vector<float>::max()
+{
+    float max;
+    vDSP_maxv(this->data, 1, &max, this->elementCount);
+    return max;
+}
+
+template <>
+double Vector<double>::max()
+{
+    double max;
+    vDSP_maxvD(this->data, 1, &max, this->elementCount);
+    return max;
+}
+
 template class Signals::Vector<double>;
 template class Signals::Vector<float>;
