@@ -8,6 +8,7 @@
 
 #include "SofaOpcodes.hpp"
 #include "utilities.hpp"
+#include <fstream>
 #include <netcdf.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,13 +25,11 @@ int SofaOpcode::init()
 {
     CSOUND* cs = (CSOUND*)csound;
 
-    function<MYFLT*(size_t)> allocator = [&](size_t count) -> MYFLT* {
+    allocator = [&](size_t count) -> MYFLT* {
         return (MYFLT*)(cs->Calloc(cs, sizeof(MYFLT) * count));
     };
 
-    fftSetup = vDSP_create_fftsetupD(log2n, kFFTRadix2);
-    zInput.realp = (double*)allocator(n / 2);
-    zInput.imagp = (double*)allocator(n / 2);
+    new (&dft) DFT(allocator, log2n);
     const int ksmps = cs->GetKsmps(cs);
     double scalerStep = 1. / (n / 2 + 1);
 
@@ -40,22 +39,60 @@ int SofaOpcode::init()
     new (&inMags) Vec(allocator(n / 2 + 1), n / 2 + 1);
     new (&inPhases) Vec(allocator(n / 2 + 1), n / 2 + 1);
     new (&frequencyScale) Vec(allocator(n / 2 + 1), n / 2 + 1);
-    new (&interlacedPolar) Vec(allocator(n + 2), n + 2);
     STRINGDAT* filenameDat = (STRINGDAT*)(inargs.data(1));
-    string filename = filenameDat->data;
+    filename = filenameDat->data;
     frequencyScale.ramp(1, -scalerStep);
 
     window.hanningWindow();
-    file = NetCDFFile(filename, "TF");
 
-    Mat tempInterlacedPolar(allocator(file.M * file.N * 2), file.M, file.N * 2);
-    new (&fileMags) Mat(allocator(file.M * file.N), file.M, file.N);
-    new (&filePhases) Mat(allocator(file.M * file.N), file.M, file.N);
-    sofaToPolar(file, fileMags, filePhases, tempInterlacedPolar);
-
+    if ((filename.substr(filename.find_last_of(".") + 1) == "sofa")) {
+        openSofa();
+    }
+    else if ((filename.substr(filename.find_last_of(".") + 1) == "dat")) {
+        openDat();
+    }
+    else {
+        cout << "Probably not the right file type" << endl;
+        exit(-1);
+    }
     new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, frameSize, hopSize, allocator);
 
     return OK;
+}
+
+void SofaOpcode::openDat()
+{
+    streampos begin, end;
+    ifstream file(filename, ios::binary);
+    begin = file.tellg();
+    file.seekg(0, ios::end);
+    end = file.tellg();
+    const size_t sizeBytes = end - begin;
+    const size_t elementCount = sizeBytes / sizeof(float);
+    const size_t rowCount = elementCount / 128;
+    Mat allFileData = Mat(allocator(elementCount), rowCount, 128);
+    file.seekg(0, ios::beg);
+    float fileInput[elementCount];
+    file.read((char*)fileInput, sizeBytes);
+    double* allFileDataDouble = (double*)allFileData.data;
+
+    for (size_t i = 0; i < elementCount; ++i) {
+        allFileDataDouble[i] = fileInput[i];
+    }
+    file.close();
+
+    Mat tempMags(allocator(rowCount * 64), rowCount, 64);
+    new (&fileMags) Mat(allocator(rowCount * 65), rowCount, 65);
+    cblas_dcopy(64 * rowCount, (double*)allFileData.data, 2, (double*)tempMags.data, 1);
+
+    vDSP_mmovD(tempMags.data, (double*)fileMags.data, 64, rowCount, 64, 65);
+    Mat tempPhases(allocator(rowCount * 64), rowCount, 64);
+    new (&filePhases) Mat(allocator(rowCount * 65), rowCount, 65);
+    cblas_dcopy(64 * rowCount, (double*)&allFileData.data[1], 2,
+                (double*)tempPhases.data, 1);
+    vDSP_mmovD(tempPhases.data, (double*)filePhases.data, 64, rowCount, 64, 65);
+    cblas_dcopy(rowCount, tempPhases.data, 64, (double*)&fileMags.data[64], 65);
+    vDSP_vclrD((double*)filePhases.data, 65, rowCount);
 }
 
 void SofaOpcode::sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& temp)
@@ -78,6 +115,16 @@ void SofaOpcode::sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& tem
     }
 }
 
+void SofaOpcode::openSofa()
+{
+    NetCDFFile file = NetCDFFile(filename, "TF");
+
+    Mat tempInterlacedPolar(allocator(file.M * file.N * 2), file.M, file.N * 2);
+    new (&fileMags) Mat(allocator(file.M * file.N), file.M, file.N);
+    new (&filePhases) Mat(allocator(file.M * file.N), file.M, file.N);
+    sofaToPolar(file, fileMags, filePhases, tempInterlacedPolar);
+}
+
 int SofaOpcode::kperf()
 {
     CSOUND* cs = (CSOUND*)csound;
@@ -86,55 +133,23 @@ int SofaOpcode::kperf()
     Vec out = Vec((MYFLT*)output.data, cs->GetKsmps(cs));
     int index = *((MYFLT*)inargs.data(2));
 
-    cout << index << endl;
     Vec mags = fileMags[index];
     Vec phi = filePhases[index];
 
+    mags[0] = abs(mags[0]);
+    mags[1] = abs(mags[1]);
+
     frameBuffer.process(in, out, [&](Vec inputFrame, Vec outputFrame) {
         Vec::multiply(inputFrame, window, inputFrame);
-        realToPolar(inputFrame);
+        dft.realToPolar(inputFrame, inMags, inPhases);
 
         Vec::multiply(inMags, mags, inMags);
         Vec::add(inPhases, phi, inPhases);
 
-        polarToReal(inputFrame);
+        dft.polarToReal(inMags, inPhases, inputFrame);
         Vec::copy(inputFrame, outputFrame);
         outputFrame.multiply(0.5);
     });
 
     return OK;
-}
-
-void SofaOpcode::realToPolar(Vec& inputFrame)
-{
-    vDSP_ctozD((DSPDoubleComplex*)inputFrame.data, 2, &zInput, 1, n / 2);
-    vDSP_fft_zripD(fftSetup, &zInput, 1, log2n, kFFTDirection_Forward);
-    zInput.realp[n / 2] = zInput.imagp[0];
-    zInput.imagp[n / 2] = 0;
-    zInput.imagp[0] = 0;
-
-    vDSP_ztocD(&zInput, 1, (DSPDoubleComplex*)interlacedPolar.data, 2, n / 2 + 1);
-    vDSP_polarD(interlacedPolar.data, 2, (double*)interlacedPolar.data, 2, n / 2 + 1);
-
-    cblas_dcopy((UInt32)n / 2 + 1, &interlacedPolar.data[0], 2, (double*)inMags.data, 1);
-    cblas_dcopy((UInt32)n / 2 + 1, &interlacedPolar.data[1], 2,
-                (double*)inPhases.data, 1);
-}
-
-void SofaOpcode::polarToReal(Vec& inputFrame)
-{
-    cblas_dcopy((UInt32)n / 2 + 1, inMags.data, 1, (double*)&interlacedPolar.data[0], 2);
-    cblas_dcopy((UInt32)n / 2 + 1, inPhases.data, 1, (double*)&interlacedPolar.data[1], 2);
-
-    vDSP_rectD(interlacedPolar.data, 2, (double*)interlacedPolar.data, 2, n / 2 + 1);
-    vDSP_ctozD((DSPDoubleComplex*)interlacedPolar.data, 2, &zInput, 1, n / 2 + 1);
-
-    zInput.imagp[0] = zInput.realp[n / 2];
-    zInput.realp[n / 2] = 0;
-    zInput.imagp[n / 2] = 0;
-
-    vDSP_fft_zripD(fftSetup, &zInput, 1, log2n, kFFTDirection_Inverse);
-    vDSP_ztocD(&zInput, 1, (DSPDoubleComplex*)inputFrame.data, 2, n / 2);
-
-    inputFrame.multiply(0.5 / n);
 }

@@ -1,37 +1,19 @@
-//
-//  FFT.h
-//  ModVoc
-//
-//  Created by Edward Costello on 24/08/2014.
-//  Copyright (c) 2014 Edward Costello. All rights reserved.
-//
-
-#include "Matrix.hpp"
+#include "Vector.hpp"
 #include <Accelerate/Accelerate.h>
-#include <MacTypes.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#ifndef _DSPFFT
-#define _DSPFFT
-
-using namespace Signals;
 using namespace std;
-template <typename T> class DFT {
+using namespace Signals;
 
-    size_t FFTFrameSize;
-    int log2n;
-    FFTSetupD fftSetupD;
-    FFTSetup fftSetup;
-    DSPDoubleSplitComplex complexInputBufferD;
-    DSPDoubleSplitComplex complexOutputBufferD;
-    DSPSplitComplex complexInputBuffer;
-    DSPSplitComplex complexOutputBuffer;
+typedef Vector<double> Vec;
+typedef Matrix<double> Mat;
+class DFT {
+    const size_t log2N, N;
+    const FFTSetupD fftSetup;
+    const DSPDoubleSplitComplex zInput;
+    const Vec interlacedPolar;
 
-  public:
-    DFT<T>(size_t FFTFrameSize, function<T *(size_t)> allocator);
-    void forward(Vector<T> &input, ComplexVector<T> &output);
-    void inverse(ComplexVector<T> &input, Vector<T> &output);
+public:
+    DFT(function<double*(size_t)> allocator, size_t log2n);
+    void realToPolar(Vec& inputFrame, Vec& outputMags, Vec& outputPhases);
+    void polarToReal(Vec& inputMags, Vec& inputPhases, Vec& outputFrame);
 };
-
-#endif

@@ -299,6 +299,8 @@ if(BUILD_SOFA_OPCODES AND NOT EMSCRIPTEN)
       sofa/NetCDFFile.hpp
       sofa/NetCDFFile.cpp
       sofa/module.cpp
+      common/SignalData/DFT.hpp
+      common/SignalData/DFT.cpp
       common/SignalData/Matrix.hpp
       common/SignalData/Matrix.cpp
       common/SignalData/Vector.hpp
@@ -359,3 +361,4 @@ if(BUILD_TESTOPCODE AND EMSCRIPTEN)
 endif()
 
 check_include_file(hdf5.h HDF5_H)
+add_subdirectory(fastconvolve)

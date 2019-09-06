@@ -7,6 +7,7 @@
 //
 
 #include "../common/FrameBuffer.hpp"
+#include "../common/SignalData/DFT.hpp"
 #include "../common/SignalData/Matrix.hpp"
 #include "../common/SignalData/Vector.hpp"
 #include "NetCDFFile.hpp"
@@ -29,16 +30,16 @@ public:
 };
 
 class SofaOpcode : public csnd::Plugin<1, 3> {
-    Vec input, output, window, inMags, inPhases, interlacedPolar, frequencyScale;
+    Vec input, output, window, inMags, inPhases, frequencyScale;
+    function<MYFLT*(size_t)> allocator;
     Mat fileMags, filePhases;
-    NetCDFFile file;
     FrameBuffer<MYFLT> frameBuffer;
-    FFTSetupD fftSetup;
-    DSPDoubleSplitComplex zInput;
+    DFT dft;
+    string filename;
 
-    void realToPolar(Vec& inputFrame);
-    void polarToReal(Vec& inputFrame);
     void sofaToPolar(NetCDFFile& input, Mat& mags, Mat& phases, Mat& temp);
+    void openSofa();
+    void openDat();
 
 public:
     int init();
