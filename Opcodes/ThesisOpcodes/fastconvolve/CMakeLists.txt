@@ -6,6 +6,8 @@ if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
   set(SOURCES
       common/Vector.hpp
       common/Vector.cpp
+      common/FrameBuffer.hpp
+      common/FrameBuffer.cpp
       module.cpp
       FastConvolve.cpp
       FastConvolve.hpp)

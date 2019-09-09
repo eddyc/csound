@@ -17,15 +17,23 @@ using namespace std;
 
 int FastConvolve::init()
 {
-    newVec = VectorFactory<MYFLT>([&](size_t count) -> MYFLT* {
-        CSOUND* cs = (CSOUND*)csound;
-        return (MYFLT*)(cs->Calloc(cs, sizeof(MYFLT) * count));
-    });
-    const auto data = newVec(10);
-    const auto filler = newVec(5).fill(4);
+    CSOUND* cs = (CSOUND*)csound;
 
-    data.push(filler);
-    data.print();
+    const int ksmps = cs->GetKsmps(cs);
+    const auto allocator = [&](size_t count) -> MYFLT* {
+        return (MYFLT*)(cs->Calloc(cs, sizeof(MYFLT) * count));
+    };
+    newVec = VectorFactory<MYFLT>(allocator);
+
+    const size_t frameSize = 64;
+    const size_t hopSize = 32;
+    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, false);
+    const auto data1 = newVec(10).ramp(0, 9);
+    const auto data2 = newVec(2).ramp(0, 1);
+    data1.push(data2);
+    data1.print();
+    data1.shift(2);
+    data1.print();
     return OK;
 }
 
@@ -36,9 +44,12 @@ int FastConvolve::kperf()
     const int ksmps = cs->GetKsmps(cs);
 
     new (&ain) Vec(((MYFLT*)inargs.data(0)), ksmps);
+    new (&aout) Vec(((MYFLT*)outargs.data(0)), ksmps);
 
-    ain.fill(44);
-    // CSOUND* cs = (CSOUND*)csound;
+    frameBuffer.process(ain, aout, [&](const Vec& inputFrame, const Vec& outputFrame) -> void {
+        Vec::copy(inputFrame, outputFrame);
+    });
 
+    // aout.print();
     return OK;
 }

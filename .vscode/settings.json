@@ -6,7 +6,15 @@
         "functional": "cpp",
         "__functional_03": "cpp",
         "istream": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "valarray": "cpp",
+        "array": "cpp",
+        "iterator": "cpp",
+        "string_view": "cpp",
+        "vector": "cpp",
+        "iostream": "cpp"
     },
     "terminal.explorerKind": "external"
 }
