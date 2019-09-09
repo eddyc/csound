@@ -25,7 +25,7 @@ class FastConvolve : public csnd::Plugin<1, 3> {
     function<MYFLT*(size_t)> allocator;
     string filename;
     Vec ain, aout, mags, phases, window, convBuffer, convTail;
-    Mat timeDomainDAT;
+    Mat timeDomainDAT, fileMags, filePhases;
     FrameBuffer<MYFLT> frameBuffer;
     DFT dft, zeropadDFT;
     DATFile datfile;

@@ -123,6 +123,30 @@ void Vector<float>::multiply(const Vector<float>& a,
 }
 
 template <>
+void Vector<double>::add(const Vector<double>& a,
+                         const Vector<double>& b,
+                         const Vector<double>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector multiply: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vDSP_vaddD(a.data, 1, b.data, 1, (double*)output.data, 1, a.elementCount);
+}
+
+template <>
+void Vector<float>::add(const Vector<float>& a, const Vector<float>& b, const Vector<float>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector multiply: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vDSP_vadd(a.data, 1, b.data, 1, (float*)output.data, 1, a.elementCount);
+}
+
+template <>
 const Vector<float>& Vector<float>::ramp(float start, float end) const
 {
     float increment = (end - start) / (float)(elementCount - 1);

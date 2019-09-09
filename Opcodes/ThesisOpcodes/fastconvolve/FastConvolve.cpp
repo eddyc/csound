@@ -27,14 +27,14 @@ int FastConvolve::init()
     newVec = VectorFactory<MYFLT>(allocator);
     frameSize = 128;
     convSize = frameSize * 2;
-    hopSize = frameSize / 2;
-    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, true);
+    hopSize = frameSize;
+    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, false);
     new (&dft) DFT(allocator, (size_t)log2((float)frameSize));
     new (&zeropadDFT) DFT(allocator, (size_t)log2((float)convSize));
     new (&ain) Vec(((MYFLT*)inargs.data(0)), ksmps);
     new (&aout) Vec(((MYFLT*)outargs.data(0)), ksmps);
-    new (&mags) Vec(allocator, frameSize / 2 + 1);
-    new (&phases) Vec(allocator, frameSize / 2 + 1);
+    new (&mags) Vec(allocator, convSize / 2 + 1);
+    new (&phases) Vec(allocator, convSize / 2 + 1);
     new (&convBuffer) Vec(allocator, convSize);
     new (&convTail) Vec(allocator, frameSize);
     new (&window) Vec(allocator, frameSize);
@@ -43,40 +43,40 @@ int FastConvolve::init()
     filename = filenameDat->data;
     new (&datfile) DATFile(allocator, filename);
     new (&timeDomainDAT) Mat(allocator, datfile.magnitudes.rowCount, convSize);
+    new (&fileMags) Mat(allocator, datfile.magnitudes.rowCount, convSize / 2 + 1);
+    new (&filePhases) Mat(allocator, datfile.magnitudes.rowCount, convSize / 2 + 1);
 
     for (int i = 0; i < datfile.magnitudes.rowCount; ++i) {
         auto mags = datfile.magnitudes[i];
         auto phases = datfile.phases[i];
         auto row = timeDomainDAT[i].sub(frameSize, 0);
         dft.polarToReal(mags, phases, row);
-        // Plot<MYFLT>::x(row);
+        Vec::multiply(window, row, row);
+        auto fullRow = timeDomainDAT[i];
+        auto fileMagRow = fileMags[i];
+        auto filePhaseRow = filePhases[i];
+        zeropadDFT.realToPolar(fullRow, fileMagRow, filePhaseRow);
     }
     return OK;
 }
 
 int FastConvolve::kperf()
 {
+    int index = *((MYFLT*)inargs.data(2));
+    auto fileMag = fileMags[index];
+    auto filePhase = filePhases[index];
     frameBuffer.process(ain, aout, [&](const Vec& inputFrame, const Vec& outputFrame) -> void {
-        convBuffer.shift(-frameSize);
-        Vec::multiply(inputFrame, window, convBuffer.sub(frameSize, 0));
-        // Plot<MYFLT>::x(convBuffer.sub(frameSize, 0));
+        Vec::copy(inputFrame, convBuffer.sub(frameSize, frameSize));
+        Vec::copy(convTail, convBuffer.sub(frameSize, 0));
+        zeropadDFT.realToPolar(convBuffer, mags, phases);
 
-        // Vec::multiply(inputFrame, window, inputFrame);
-        // Plot<MYFLT>::x(inputFrame);
-        // Vec::copy(inputFrame, convBuffer.sub(frameSize, 0));
-        Vec::copy(convBuffer.sub(frameSize, 0), outputFrame);
+        Vec::copy(inputFrame, convTail);
+        Vec::multiply(mags, fileMag, mags);
+        Vec::add(phases, filePhase, phases);
 
-        outputFrame.add(convTail);
-        Vec::copy(convBuffer.sub(frameSize, frameSize), convTail);
+        zeropadDFT.polarToReal(mags, phases, convBuffer);
 
-        // Vec::copy(inputFrame, convBuffer.sub(frameSize, 0));
-
-        // dft.realToPolar(inputFrame, mags, phases);
-        // dft.polarToReal(mags, phases, outputFrame);
-        // Vec::copy(convBuffer.sub(frameSize, 0), outputFrame);
-        // outputFrame.add(convTail);
-        // Vec::copy(convBuffer.sub(frameSize, frameSize), convTail);
-        // Plot<MYFLT>::x(outputFrame);
+        Vec::copy(convBuffer.sub(frameSize, frameSize), outputFrame);
     });
 
     // aout.print();

@@ -26,6 +26,7 @@ public:
     const Vector<T> sub(size_t length, size_t offset) const;
     static void copy(const Vector<T>& from, const Vector<T>& to);
     static void multiply(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
+    static void add(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
     T operator[](const size_t index) const;
     void print() const;
 };
