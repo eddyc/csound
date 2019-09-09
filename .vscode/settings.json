@@ -14,7 +14,11 @@
         "iterator": "cpp",
         "string_view": "cpp",
         "vector": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "ios": "cpp",
+        "__bit_reference": "cpp",
+        "algorithm": "cpp",
+        "deque": "cpp"
     },
     "terminal.explorerKind": "external"
 }

@@ -83,6 +83,46 @@ const Vector<float>& Vector<float>::fill(float value) const
 }
 
 template <>
+const Vector<double>& Vector<double>::multiply(const double value) const
+{
+    vDSP_vsmulD(data, 1, &value, (double*)data, 1, elementCount);
+    return *this;
+}
+
+template <>
+const Vector<float>& Vector<float>::multiply(const float value) const
+{
+    vDSP_vsmul(data, 1, &value, (float*)data, 1, elementCount);
+    return *this;
+}
+
+template <>
+void Vector<double>::multiply(const Vector<double>& a,
+                              const Vector<double>& b,
+                              const Vector<double>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector multiply: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vDSP_vmulD(a.data, 1, b.data, 1, (double*)output.data, 1, a.elementCount);
+}
+
+template <>
+void Vector<float>::multiply(const Vector<float>& a,
+                             const Vector<float>& b,
+                             const Vector<float>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector multiply: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vDSP_vmul(a.data, 1, b.data, 1, (float*)output.data, 1, a.elementCount);
+}
+
+template <>
 const Vector<float>& Vector<float>::ramp(float start, float end) const
 {
     float increment = (end - start) / (float)(elementCount - 1);
@@ -110,6 +150,22 @@ const Vector<double>& Vector<double>::add(const Vector<double>& input) const
 {
     vDSP_vaddD((const double*)input.data, 1, (const double*)data, 1,
                (double*)data, 1, elementCount);
+    return *this;
+}
+
+template <>
+const Vector<float>& Vector<float>::hanningWindow() const
+{
+    float* data = (float*)this->data;
+    vDSP_hann_window(data, this->elementCount, vDSP_HANN_DENORM);
+    return *this;
+}
+
+template <>
+const Vector<double>& Vector<double>::hanningWindow() const
+{
+    double* data = (double*)this->data;
+    vDSP_hann_windowD(data, this->elementCount, vDSP_HANN_DENORM);
     return *this;
 }
 
@@ -162,7 +218,42 @@ void Vector<T>::copy(const Vector<T>& from, const Vector<T>& to)
     memcpy((void*)to.data, (const void*)from.data, sizeof(T) * from.elementCount);
 }
 
+template <typename T>
+T Vector<T>::operator[](const size_t index) const
+{
+    assert(index < elementCount);
+    return this->data[index];
+}
+
+template <typename T>
+Matrix<T>::Matrix(function<T*(size_t input)> memoryAllocator, const size_t rowCount, const size_t columnCount)
+    : Vector<T>(memoryAllocator, rowCount * columnCount),
+      rowCount(rowCount),
+      columnCount(columnCount)
+{
+}
+
+template <typename T>
+Matrix<T>::Matrix(T* data, const size_t rowCount, const size_t columnCount)
+    : Vector<T>(data, rowCount * columnCount), rowCount(rowCount), columnCount(columnCount)
+{
+}
+
+template <typename T>
+Matrix<T>::~Matrix()
+{
+}
+
+template <typename T>
+Vector<T> Matrix<T>::operator[](const size_t index) const
+{
+    assert(index < rowCount);
+    return Vector<T>((T*)&this->data[index * columnCount], columnCount);
+}
+
 template class Vector<double>;
 template class Vector<float>;
+template class Matrix<double>;
+template class Matrix<float>;
 template class VectorFactory<double>;
 template class VectorFactory<float>;

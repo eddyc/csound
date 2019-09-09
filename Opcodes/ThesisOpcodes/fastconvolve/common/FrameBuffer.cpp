@@ -10,6 +10,7 @@ FrameBuffer<T>::FrameBuffer(const size_t inputSize,
                             const bool overlap)
     : inFrame(allocator, windowSize),
       outFrame(allocator, windowSize),
+      inBuffer(allocator, windowSize),
       outBuffer(allocator, windowSize),
       inputSize(inputSize),
       hopSize(hopSize),
@@ -53,11 +54,14 @@ void FrameBuffer<T>::process(Vector<T>& input,
     if (inputSize > hopSize) {
         for (size_t i = 0; i < slices; ++i) {
             const auto inputSlice = input.sub(hopSize, i * hopSize);
-            inFrame.push(inputSlice);
+            inBuffer.push(inputSlice);
             bufferedInputSamples += inputSize;
             bufferedInputSamples %= hopSize;
             if (bufferedInputSamples == 0) {
+                outFrame.fill(0);
+                Vector<T>::copy(inBuffer, inFrame);
                 callback(inFrame, outFrame);
+                inFrame.fill(0);
 
                 if (overlap == true) {
                     outBuffer.add(outFrame);

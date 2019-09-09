@@ -7,6 +7,7 @@
 //
 
 #include "FastConvolve.hpp"
+#include "./common/Plot.hpp"
 #include <fstream>
 #include <netcdf.h>
 #include <stdio.h>
@@ -20,34 +21,62 @@ int FastConvolve::init()
     CSOUND* cs = (CSOUND*)csound;
 
     const int ksmps = cs->GetKsmps(cs);
-    const auto allocator = [&](size_t count) -> MYFLT* {
+    allocator = [&](size_t count) -> MYFLT* {
         return (MYFLT*)(cs->Calloc(cs, sizeof(MYFLT) * count));
     };
     newVec = VectorFactory<MYFLT>(allocator);
-
-    const size_t frameSize = 256;
-    const size_t hopSize = 64;
+    frameSize = 128;
+    convSize = frameSize * 2;
+    hopSize = frameSize / 2;
     new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, true);
-    const auto data1 = newVec(10).ramp(0, 9);
-    const auto data2 = newVec(2).ramp(0, 1);
-    data1.push(data2);
-    data1.print();
-    data1.shift(2);
-    data1.print();
+    new (&dft) DFT(allocator, (size_t)log2((float)frameSize));
+    new (&zeropadDFT) DFT(allocator, (size_t)log2((float)convSize));
+    new (&ain) Vec(((MYFLT*)inargs.data(0)), ksmps);
+    new (&aout) Vec(((MYFLT*)outargs.data(0)), ksmps);
+    new (&mags) Vec(allocator, frameSize / 2 + 1);
+    new (&phases) Vec(allocator, frameSize / 2 + 1);
+    new (&convBuffer) Vec(allocator, convSize);
+    new (&convTail) Vec(allocator, frameSize);
+    new (&window) Vec(allocator, frameSize);
+    window.hanningWindow();
+    STRINGDAT* filenameDat = (STRINGDAT*)(inargs.data(1));
+    filename = filenameDat->data;
+    new (&datfile) DATFile(allocator, filename);
+    new (&timeDomainDAT) Mat(allocator, datfile.magnitudes.rowCount, convSize);
+
+    for (int i = 0; i < datfile.magnitudes.rowCount; ++i) {
+        auto mags = datfile.magnitudes[i];
+        auto phases = datfile.phases[i];
+        auto row = timeDomainDAT[i].sub(frameSize, 0);
+        dft.polarToReal(mags, phases, row);
+        // Plot<MYFLT>::x(row);
+    }
     return OK;
 }
 
 int FastConvolve::kperf()
 {
-    CSOUND* cs = (CSOUND*)csound;
-
-    const int ksmps = cs->GetKsmps(cs);
-
-    new (&ain) Vec(((MYFLT*)inargs.data(0)), ksmps);
-    new (&aout) Vec(((MYFLT*)outargs.data(0)), ksmps);
-
     frameBuffer.process(ain, aout, [&](const Vec& inputFrame, const Vec& outputFrame) -> void {
-        Vec::copy(inputFrame, outputFrame);
+        convBuffer.shift(-frameSize);
+        Vec::multiply(inputFrame, window, convBuffer.sub(frameSize, 0));
+        // Plot<MYFLT>::x(convBuffer.sub(frameSize, 0));
+
+        // Vec::multiply(inputFrame, window, inputFrame);
+        // Plot<MYFLT>::x(inputFrame);
+        // Vec::copy(inputFrame, convBuffer.sub(frameSize, 0));
+        Vec::copy(convBuffer.sub(frameSize, 0), outputFrame);
+
+        outputFrame.add(convTail);
+        Vec::copy(convBuffer.sub(frameSize, frameSize), convTail);
+
+        // Vec::copy(inputFrame, convBuffer.sub(frameSize, 0));
+
+        // dft.realToPolar(inputFrame, mags, phases);
+        // dft.polarToReal(mags, phases, outputFrame);
+        // Vec::copy(convBuffer.sub(frameSize, 0), outputFrame);
+        // outputFrame.add(convTail);
+        // Vec::copy(convBuffer.sub(frameSize, frameSize), convTail);
+        // Plot<MYFLT>::x(outputFrame);
     });
 
     // aout.print();

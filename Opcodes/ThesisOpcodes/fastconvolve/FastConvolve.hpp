@@ -6,6 +6,8 @@
 //  Copyright © 2017 Edward Costello. All rights reserved.
 //
 
+#include "./common/DATFile.hpp"
+#include "./common/DFT.hpp"
 #include "./common/FrameBuffer.hpp"
 #include "./common/Vector.hpp"
 #include <Accelerate/Accelerate.h>
@@ -14,13 +16,22 @@
 #include <samplerate.h>
 using namespace std;
 typedef Vector<MYFLT> Vec;
+typedef Matrix<MYFLT> Mat;
 
 #ifndef _FastConvolve_
 #define _FastConvolve_
 class FastConvolve : public csnd::Plugin<1, 3> {
     VectorFactory<MYFLT> newVec;
-    Vec ain, aout, buffer;
+    function<MYFLT*(size_t)> allocator;
+    string filename;
+    Vec ain, aout, mags, phases, window, convBuffer, convTail;
+    Mat timeDomainDAT;
     FrameBuffer<MYFLT> frameBuffer;
+    DFT dft, zeropadDFT;
+    DATFile datfile;
+    size_t frameSize;
+    size_t convSize;
+    size_t hopSize;
 
 public:
     int init();

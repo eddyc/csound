@@ -8,6 +8,12 @@ if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
       common/Vector.cpp
       common/FrameBuffer.hpp
       common/FrameBuffer.cpp
+      common/DFT.hpp
+      common/DFT.cpp
+      common/Plot.hpp
+      common/Plot.cpp
+      common/DATFile.hpp
+      common/DATFile.cpp
       module.cpp
       FastConvolve.cpp
       FastConvolve.hpp)

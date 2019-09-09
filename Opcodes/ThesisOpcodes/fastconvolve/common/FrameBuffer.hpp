@@ -6,7 +6,7 @@ using namespace std;
 template <typename T>
 class FrameBuffer {
 private:
-    const Vector<T> inFrame, outFrame, outBuffer;
+    const Vector<T> inFrame, outFrame, inBuffer, outBuffer;
     const size_t inputSize, hopSize, windowSize;
     const bool overlap;
     size_t bufferedInputSamples = 0;
