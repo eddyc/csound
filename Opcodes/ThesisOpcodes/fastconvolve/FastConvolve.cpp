@@ -25,9 +25,9 @@ int FastConvolve::init()
     };
     newVec = VectorFactory<MYFLT>(allocator);
 
-    const size_t frameSize = 64;
-    const size_t hopSize = 32;
-    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, false);
+    const size_t frameSize = 256;
+    const size_t hopSize = 64;
+    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, true);
     const auto data1 = newVec(10).ramp(0, 9);
     const auto data2 = newVec(2).ramp(0, 1);
     data1.push(data2);

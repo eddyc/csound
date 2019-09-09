@@ -10,7 +10,6 @@ private:
     const size_t inputSize, hopSize, windowSize;
     const bool overlap;
     size_t bufferedInputSamples = 0;
-    size_t bufferedOutputSamples = 0;
 
 public:
     FrameBuffer(const size_t inputSize,

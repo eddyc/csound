@@ -5,7 +5,7 @@
 <CsInstruments>
 
 sr = 44100
-ksmps = 256
+ksmps = 1024
 nchnls = 2
 0dbfs = 1
 
@@ -15,7 +15,7 @@ instr 1
 
     ain = 0
     kin = 0
-    ain = vco2(0.1, 220)
+    ain = vco2(0.1, 440)
     aout fastconvolve ain, "", kin
     outs(aout, aout);
 endin

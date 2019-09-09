@@ -52,7 +52,7 @@ void FrameBuffer<T>::process(Vector<T>& input,
     const double slices = inputSize / hopSize;
     if (inputSize > hopSize) {
         for (size_t i = 0; i < slices; ++i) {
-            Vector<T> inputSlice = input.sub(hopSize, i * hopSize);
+            const auto inputSlice = input.sub(hopSize, i * hopSize);
             inFrame.push(inputSlice);
             bufferedInputSamples += inputSize;
             bufferedInputSamples %= hopSize;
@@ -66,13 +66,11 @@ void FrameBuffer<T>::process(Vector<T>& input,
                     Vector<T>::copy(outFrame, outBuffer);
                 }
 
-                Vector<T> temp = outBuffer.sub(hopSize, 0);
+                const auto temp = outBuffer.sub(hopSize, 0);
                 Vector<T>::copy(temp, output.sub(hopSize, i * hopSize));
             }
+            outBuffer.shift(-hopSize);
         }
-
-        outBuffer.shift(-inputSize);
-        return;
     }
 }
 template class FrameBuffer<double>;
