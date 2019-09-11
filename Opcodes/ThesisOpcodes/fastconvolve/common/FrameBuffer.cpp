@@ -51,7 +51,7 @@ void FrameBuffer<T>::process(Vector<T>& input,
     }
 
     const double slices = inputSize / hopSize;
-    if (inputSize > hopSize) {
+    if (inputSize >= hopSize) {
         for (size_t i = 0; i < slices; ++i) {
             const auto inputSlice = input.sub(hopSize, i * hopSize);
             inBuffer.push(inputSlice);
@@ -75,6 +75,10 @@ void FrameBuffer<T>::process(Vector<T>& input,
             }
             outBuffer.shift(-hopSize);
         }
+    }
+    else {
+        cout << "FrameBuffer: input size less than or not equal to hopsize" << endl;
+        exit(-1);
     }
 }
 template class FrameBuffer<double>;

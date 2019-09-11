@@ -97,6 +97,20 @@ const Vector<float>& Vector<float>::multiply(const float value) const
 }
 
 template <>
+const Vector<double>& Vector<double>::reverse() const
+{
+    vDSP_vrvrsD((double*)data, 1, elementCount);
+    return *this;
+}
+
+template <>
+const Vector<float>& Vector<float>::reverse() const
+{
+    vDSP_vrvrs((float*)data, 1, elementCount);
+    return *this;
+}
+
+template <>
 void Vector<double>::multiply(const Vector<double>& a,
                               const Vector<double>& b,
                               const Vector<double>& output)

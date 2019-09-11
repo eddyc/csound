@@ -54,3 +54,10 @@ void DFT::polarToReal(const Vec& inMags, const Vec& inPhases, const Vec& outputF
 
     outputFrame.multiply(0.5 / N);
 }
+
+void DFT::inPlaceForwardComplex(const Vec& real, const Vec& imag)
+{
+    DSPDoubleSplitComplex zIn = {.realp = (double*)real.data,
+                                 .imagp = (double*)imag.data};
+    vDSP_fft_zipD(fftSetup, &zIn, 1, log2N, kFFTDirection_Forward);
+}

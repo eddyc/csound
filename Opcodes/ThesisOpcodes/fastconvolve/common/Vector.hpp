@@ -22,6 +22,7 @@ public:
     const Vector<T>& multiply(const T) const;
     const Vector<T>& ramp(T, T) const;
     const Vector<T>& shift(int) const;
+    const Vector<T>& reverse() const;
     const Vector<T>& hanningWindow() const;
     const Vector<T> sub(size_t length, size_t offset) const;
     static void copy(const Vector<T>& from, const Vector<T>& to);

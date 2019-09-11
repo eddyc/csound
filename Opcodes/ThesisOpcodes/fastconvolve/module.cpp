@@ -8,8 +8,9 @@
 
 #include "FastConvolve.hpp"
 extern "C" {
-OENTRY localops[] = {{(char*)"fastconvolve", sizeof(FastConvolve), 0, 3, (char*)"a",
-                      (char*)"aSk", (SUBR)FastConvolve::init_, (SUBR)FastConvolve::kperf_}};
+OENTRY localops[] = {{(char*)"fastconvolve", sizeof(FastConvolve), 0, 3,
+                      (char*)"a", (char*)"aSkSi", (SUBR)FastConvolve::init_,
+                      (SUBR)FastConvolve::kperf_}};
 
 PUBLIC int csoundModuleInit_fastconvolve(CSOUND* csound)
 {
@@ -24,7 +25,7 @@ PUBLIC int csoundModuleCreate(CSOUND* csound)
 {
     csnd::plugin<FastConvolve>((csnd::Csound*)csound,
                                (const char*)"fastconvolve", (const char*)"a",
-                               (const char*)"aSk", (uint32_t)csnd::thread::ik);
+                               (const char*)"aSkSi", (uint32_t)csnd::thread::ik);
     return 0;
 }
 

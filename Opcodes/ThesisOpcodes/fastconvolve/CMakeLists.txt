@@ -14,13 +14,15 @@ if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
       common/Plot.cpp
       common/DATFile.hpp
       common/DATFile.cpp
+      common/NetCDFFile.hpp
+      common/NetCDFFile.cpp
       module.cpp
       FastConvolve.cpp
       FastConvolve.hpp)
 
   find_library(ACCELERATE Accelerate)
-
+  find_package(NetCDF)
   make_plugin(fastconvolve "${SOURCES}")
-  include_directories(${ACCELERATE_H})
-  target_link_libraries(fastconvolve ${ACCELERATE})
+  include_directories(${ACCELERATE_H} ${NETCDF_INCLUDES})
+  target_link_libraries(fastconvolve ${ACCELERATE} ${NETCDF_LIBRARIES})
 endif()

@@ -9,6 +9,7 @@
 #include "./common/DATFile.hpp"
 #include "./common/DFT.hpp"
 #include "./common/FrameBuffer.hpp"
+#include "./common/NetCDFFile.hpp"
 #include "./common/Vector.hpp"
 #include <Accelerate/Accelerate.h>
 #include <functional>
@@ -20,18 +21,17 @@ typedef Matrix<MYFLT> Mat;
 
 #ifndef _FastConvolve_
 #define _FastConvolve_
-class FastConvolve : public csnd::Plugin<1, 3> {
-    VectorFactory<MYFLT> newVec;
+class FastConvolve : public csnd::Plugin<1, 5> {
     function<MYFLT*(size_t)> allocator;
     string filename;
     Vec ain, aout, mags, phases, window, convBuffer, convTail;
     Mat timeDomainDAT, fileMags, filePhases;
     FrameBuffer<MYFLT> frameBuffer;
     DFT dft, zeropadDFT;
-    DATFile datfile;
     size_t frameSize;
     size_t convSize;
     size_t hopSize;
+    size_t channel;
 
 public:
     int init();
@@ -46,6 +46,12 @@ public:
         self->kperf();
         return OK;
     }
+
+    void allocateDataInputStructures(size_t frameSize, size_t rowCount);
+    void openDat();
+    void openSofa();
+    void openSofaIR(NetCDFFile&);
+    void openSofaTF(NetCDFFile&);
 };
 
 #endif
