@@ -28,6 +28,9 @@ public:
     static void copy(const Vector<T>& from, const Vector<T>& to);
     static void multiply(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
     static void add(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
+    static void magnitude(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& magnitude);
+    static void angle(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& angle);
+    static void phase(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& phase);
     T operator[](const size_t index) const;
     void print() const;
 };

@@ -129,17 +129,22 @@ void FastConvolve::openSofaTF(NetCDFFile& sofaFile)
     allocateDataInputStructures(sofaFile.N * 2 - 2, sofaFile.M);
 
     Mat irData = Mat(allocator, sofaFile.M, sofaFile.N * 2 - 2);
-    Mat tempReal = Mat(allocator, sofaFile.M, sofaFile.N * 2 - 2);
-    Mat tempImag = Mat(allocator, sofaFile.M, sofaFile.N * 2 - 2);
+    Vec ramp = Vec(allocator, sofaFile.N);
+    Vec tempReal = Vec(allocator, sofaFile.N * 2 - 2);
+    Vec tempImag = Vec(allocator, sofaFile.N * 2 - 2);
     Mat sofaReal = Mat(&sofaFile.dataRealValues[0], sofaFile.M, sofaFile.N);
     Mat sofaImag = Mat(&sofaFile.dataImagValues[0], sofaFile.M, sofaFile.N);
+    ramp.ramp(1, 1. / (double)ramp.elementCount);
+    // Vec::multiply(ramp, ramp, ramp); // FIXME: Maybe not needed
 
     for (int i = 0; i < irData.rowCount; ++i) {
-        getMirror(sofaReal[i], tempReal[i], 1);
-        getMirror(sofaImag[i], tempImag[i], -1);
-        dft.inPlaceForwardComplex(tempReal[i], tempImag[i]);
-        tempImag[i].print();
-        Plot<MYFLT>::x(tempImag[i]);
+        Vec::multiply(sofaReal[i], ramp, sofaReal[i]);
+        Vec::multiply(sofaImag[i], ramp, sofaImag[i]);
+        getMirror(sofaReal[i], tempReal, 1);
+        getMirror(sofaImag[i], tempImag, -1);
+        dft.inPlaceForwardComplex(tempReal, tempImag);
+        Vec::copy(tempReal, irData[i]);
+        Plot<MYFLT>::x(irData[i]);
     }
 }
 

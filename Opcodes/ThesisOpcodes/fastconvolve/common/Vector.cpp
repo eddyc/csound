@@ -161,6 +161,76 @@ void Vector<float>::add(const Vector<float>& a, const Vector<float>& b, const Ve
 }
 
 template <>
+void Vector<double>::angle(const Vector<double>& real,
+                           const Vector<double>& imag,
+                           const Vector<double>& angle)
+{
+    if (real.elementCount != imag.elementCount || real.elementCount != angle.elementCount) {
+        cout << "Vector angle: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    DSPDoubleSplitComplex input = {
+        .realp = (double*)real.data,
+        .imagp = (double*)imag.data,
+    };
+
+    vDSP_zvphasD(&input, 1, (double*)angle.data, 1, angle.elementCount);
+}
+
+template <>
+void Vector<float>::angle(const Vector<float>& real,
+                          const Vector<float>& imag,
+                          const Vector<float>& angle)
+{
+    if (real.elementCount != imag.elementCount || real.elementCount != angle.elementCount) {
+        cout << "Vector angle: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    DSPSplitComplex input = {
+        .realp = (float*)real.data,
+        .imagp = (float*)imag.data,
+    };
+    vDSP_zvphas(&input, 1, (float*)angle.data, 1, angle.elementCount);
+}
+
+template <>
+void Vector<double>::magnitude(const Vector<double>& real,
+                               const Vector<double>& imag,
+                               const Vector<double>& magnitude)
+{
+    if (real.elementCount != imag.elementCount || real.elementCount != magnitude.elementCount) {
+        cout << "Vector magnitude: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    DSPDoubleSplitComplex input = {
+        .realp = (double*)real.data,
+        .imagp = (double*)imag.data,
+    };
+
+    vDSP_zvmagsD(&input, 1, (double*)magnitude.data, 1, magnitude.elementCount);
+}
+
+template <>
+void Vector<float>::magnitude(const Vector<float>& real,
+                              const Vector<float>& imag,
+                              const Vector<float>& magnitude)
+{
+    if (real.elementCount != imag.elementCount || real.elementCount != magnitude.elementCount) {
+        cout << "Vector magnitude: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    DSPSplitComplex input = {
+        .realp = (float*)real.data,
+        .imagp = (float*)imag.data,
+    };
+    vDSP_zvmags(&input, 1, (float*)magnitude.data, 1, magnitude.elementCount);
+}
+
+template <>
 const Vector<float>& Vector<float>::ramp(float start, float end) const
 {
     float increment = (end - start) / (float)(elementCount - 1);
