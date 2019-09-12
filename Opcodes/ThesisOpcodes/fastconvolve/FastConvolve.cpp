@@ -144,7 +144,14 @@ void FastConvolve::openSofaTF(NetCDFFile& sofaFile)
         getMirror(sofaImag[i], tempImag, -1);
         dft.inPlaceForwardComplex(tempReal, tempImag);
         Vec::copy(tempReal, irData[i]);
-        Plot<MYFLT>::x(irData[i]);
+        auto sofaRow = irData[i];
+        auto fileMagRow = fileMags[i];
+        auto filePhaseRow = filePhases[i];
+        auto fullRow = timeDomainDAT[i];
+        auto row = timeDomainDAT[i].sub(frameSize, 0);
+        Vec::copy(sofaRow, row);
+        Vec::multiply(row, window, row);
+        zeropadDFT.realToPolar(fullRow, fileMagRow, filePhaseRow);
     }
 }
 
