@@ -143,6 +143,7 @@ void FastConvolve::openSofaTF(NetCDFFile& sofaFile)
         getMirror(sofaReal[i], tempReal, 1);
         getMirror(sofaImag[i], tempImag, -1);
         dft.inPlaceForwardComplex(tempReal, tempImag);
+        Plot<MYFLT>::x(tempReal);
         Vec::copy(tempReal, irData[i]);
         auto sofaRow = irData[i];
         auto fileMagRow = fileMags[i];

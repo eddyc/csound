@@ -1,13 +1,6 @@
 option(BUILD_DYNAMICWARPING_OPCODES "Build the dynamicwarping opcodes" ON)
 option(BUILD_UKFFORMANT_OPCODES "Build the ukfformant opcodes" OFF)
-option(BUILD_JSON_OPCODES "Build the json opcodes" ON)
-option(BUILD_RESAMPLE_OPCODES "Build the resample opcode" ON)
-option(BUILD_SOFA_OPCODES "Build the sofa opcode" ON)
-option(BUILD_TESTOPCODE "Build the testopcode" ON)
 option(BUILD_MODVOC_OPCODE "Build the modulation vocoder opcode" OFF)
-option(BUILD_MODVOC_TEST "Build modvoc test" OFF)
-option(BUILD_SOFA_CONVERT "Build sofa convert" OFF)
-option(BUILD_SOFA_TEST "Build sofa test" ON)
 
 if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
   set(CS_LIB CsoundLib64)
@@ -52,49 +45,6 @@ if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
                                      ${ACCELERATE_H}
                                      ${NETCDF_INCLUDES}
                                      sofaconvert
-                                     common)
-endif()
-
-if(BUILD_MODVOC_TEST AND NOT EMSCRIPTEN)
-  set(CS_LIB CsoundLib64)
-
-  set(SOURCES
-      common/RingBuffer.hpp
-      common/RingBuffer.cpp
-      common/FrameBuffer.hpp
-      common/FrameBuffer.cpp
-      common/SignalData/DFT.hpp
-      common/SignalData/DFT.cpp
-      common/SignalData/Plotter.hpp
-      common/SignalData/Plotter.cpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/MatrixMaths.hpp
-      common/SignalData/MatrixMathsAccelerate.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      common/SignalData/VectorMaths.hpp
-      common/SignalData/VectorMathsAccelerate.cpp
-      common/SignalData/StridedVectorMaths.hpp
-      common/SignalData/StridedVectorMathsAccelerate.cpp
-      modvoc/test/main.cpp)
-  set(CMAKE_CXX_STANDARD 17)
-  find_package(HDF5)
-  find_library(ACCELERATE Accelerate)
-
-  find_library(CS_LIB_PATH ${CS_LIB})
-  find_path(CSOUND_H_PATH csound.h)
-  include_directories(${CSOUND_H_PATH})
-
-  add_executable(modvoc_test "${SOURCES}")
-  target_link_libraries(modvoc_test
-                        ${CS_LIB_PATH}
-                        ${HDF5_LIBRARIES}
-                        ${ACCELERATE})
-  target_include_directories(modvoc_test
-                             PRIVATE ${HDF5_INCLUDE_DIRS}
-                                     ${ACCELERATE_H}
-                                     modvoc_test
                                      common)
 endif()
 
@@ -245,120 +195,6 @@ if(BUILD_UKFFORMANT_OPCODES AND NOT EMSCRIPTEN)
   endif()
 endif()
 
-if(BUILD_JSON_OPCODES AND NOT EMSCRIPTEN)
-
-  set(SOURCES
-      json/JsonInputOpcode.hpp
-      json/JsonInputOpcode.cpp
-      json/cJson.c
-      json/cJson.h
-      json/module.cpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      common/json.hpp)
-
-  set(CMAKE_CXX_STANDARD 17)
-  make_plugin(json "${SOURCES}")
-endif()
-
-if(BUILD_RESAMPLE_OPCODES AND NOT EMSCRIPTEN)
-
-  find_library(LIBSAMPLERATE samplerate)
-  find_path(LIBSAMPLERATE_INCLUDE_DIR samplerate.h)
-
-  set(SOURCES
-      resample/ResampleOpcodes.hpp
-      resample/ResampleOpcodes.cpp
-      resample/module.cpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      resample/utilities.cpp
-      resample/utilities.hpp)
-
-  set(CMAKE_CXX_STANDARD 17)
-  make_plugin(resample "${SOURCES}")
-  include_directories(/usr/local/include ${LIBSAMPLERATE_INCLUDE_DIR})
-  target_link_libraries(resample ${LIBSAMPLERATE} ${HDF5_LIBRARIES})
-
-endif()
-
-if(BUILD_SOFA_OPCODES AND NOT EMSCRIPTEN)
-
-  find_library(LIBSAMPLERATE samplerate)
-  find_path(LIBSAMPLERATE_INCLUDE_DIR samplerate.h)
-  find_package(NetCDF)
-  find_library(ACCELERATE Accelerate)
-
-  set(SOURCES
-      sofa/SofaOpcodes.hpp
-      sofa/SofaOpcodes.cpp
-      sofa/NetCDFFile.hpp
-      sofa/NetCDFFile.cpp
-      sofa/module.cpp
-      common/SignalData/DFT.hpp
-      common/SignalData/DFT.cpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      common/SignalData/VectorMaths.hpp
-      common/SignalData/VectorMathsAccelerate.cpp
-      common/FrameBuffer.hpp
-      common/FrameBuffer.cpp
-      common/RingBuffer.hpp
-      common/RingBuffer.cpp
-      sofa/utilities.cpp
-      sofa/utilities.hpp)
-
-  set(CMAKE_CXX_STANDARD 17)
-  make_plugin(sofa "${SOURCES}")
-  include_directories(/usr/local/include
-                      ${LIBSAMPLERATE_INCLUDE_DIR}
-                      ${ACCELERATE_H}
-                      ${NETCDF_INCLUDES})
-  target_link_libraries(sofa
-                        ${LIBSAMPLERATE}
-                        ${HDF5_LIBRARIES}
-                        ${ACCELERATE}
-                        ${NETCDF_LIBRARIES})
-
-endif()
-
-if(BUILD_TESTOPCODE AND EMSCRIPTEN)
-
-  set(SOURCES
-      testopcode/testopcode.hpp
-      testopcode/testopcode.cpp
-      testopcode/module.cpp
-      common/json.hpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/MatrixMaths.hpp
-      common/SignalData/MatrixMathsGeneric.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      common/SignalData/VectorMaths.hpp
-      common/SignalData/VectorMathsGeneric.cpp
-      common/SignalData/StridedVectorMaths.hpp
-      common/SignalData/StridedVectorMathsGeneric.cpp)
-
-  set(CMAKE_CXX_STANDARD 17)
-  make_plugin(testopcode "${SOURCES}")
-
-  message(STATUS "LAPACK_LIBRARIES: ${LAPACK}")
-
-  include_directories(/usr/local/include PRIVATE ${HDF5_INCLUDE_DIRS})
-
-  target_link_libraries(testopcode
-                        F2C
-                        BLAS
-                        LAPACK
-                        ${HDF5_LIBRARIES})
-endif()
-
 check_include_file(hdf5.h HDF5_H)
+
 add_subdirectory(fastconvolve)

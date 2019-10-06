@@ -18,7 +18,8 @@
         "ios": "cpp",
         "__bit_reference": "cpp",
         "algorithm": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "chrono": "cpp"
     },
     "terminal.explorerKind": "external"
 }
