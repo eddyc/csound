@@ -1,6 +1,7 @@
 option(BUILD_DYNAMICWARPING_OPCODES "Build the dynamicwarping opcodes" ON)
 option(BUILD_UKFFORMANT_OPCODES "Build the ukfformant opcodes" OFF)
 option(BUILD_MODVOC_OPCODE "Build the modulation vocoder opcode" OFF)
+option(BUILD_FASTCONVOLVE_OPCODES "Build the fastconvolve opcode" ON)
 
 if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
   set(CS_LIB CsoundLib64)
@@ -195,6 +196,34 @@ if(BUILD_UKFFORMANT_OPCODES AND NOT EMSCRIPTEN)
   endif()
 endif()
 
+if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
+
+  set(SOURCES
+      new_common/Vector.hpp
+      new_common/Vector.cpp
+      new_common/FrameBuffer.hpp
+      new_common/FrameBuffer.cpp
+      new_common/DFT.hpp
+      new_common/DFT.cpp
+      new_common/Plot.hpp
+      new_common/Plot.cpp
+      new_common/DATFile.hpp
+      new_common/DATFile.cpp
+      new_common/NetCDFFile.hpp
+      new_common/NetCDFFile.cpp
+      fastconvolve/module.cpp
+      fastconvolve/FastConvolve.cpp
+      fastconvolve/FastConvolve.hpp)
+
+  find_library(ACCELERATE Accelerate)
+  find_path(cblas_PATH cblas.h PATHS /System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/)
+  mark_as_advanced(ACCELERATE)
+  find_package(NetCDF)
+  make_plugin(fastconvolve "${SOURCES}")
+  include_directories(${ACCELERATE_H} ${NETCDF_INCLUDES} ${cblas_PATH})
+  target_link_libraries(fastconvolve ${ACCELERATE} ${NETCDF_LIBRARIES} ${BLAS})
+endif()
+
+
 check_include_file(hdf5.h HDF5_H)
 
-add_subdirectory(fastconvolve)

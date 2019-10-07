@@ -21,5 +21,9 @@
         "deque": "cpp",
         "chrono": "cpp"
     },
-    "terminal.explorerKind": "external"
+    "terminal.explorerKind": "external",
+    "clangd.arguments": [
+        "--compile-commands-dir=/Users/eddyc/Documents/Software/Csound Projects/csound/build",
+        "--query-driver=/Library/Developer/CommandLineTools"
+    ]
 }

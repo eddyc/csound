@@ -6,11 +6,11 @@
 //  Copyright © 2017 Edward Costello. All rights reserved.
 //
 
-#include "./common/DATFile.hpp"
-#include "./common/DFT.hpp"
-#include "./common/FrameBuffer.hpp"
-#include "./common/NetCDFFile.hpp"
-#include "./common/Vector.hpp"
+#include "../new_common/DATFile.hpp"
+#include "../new_common/DFT.hpp"
+#include "../new_common/FrameBuffer.hpp"
+#include "../new_common/NetCDFFile.hpp"
+#include "../new_common/Vector.hpp"
 #include <Accelerate/Accelerate.h>
 #include <functional>
 #include <plugin.h>
@@ -22,8 +22,8 @@ typedef Matrix<MYFLT> Mat;
 #ifndef _FastConvolve_
 #define _FastConvolve_
 class FastConvolve : public csnd::Plugin<1, 5> {
-    function<MYFLT*(size_t)> allocator;
-    string filename;
+    std::function<MYFLT*(size_t)> allocator;
+    std::string filename;
     Vec ain, aout, mags, phases, window, convBuffer, convTail;
     Mat timeDomainDAT, fileMags, filePhases;
     FrameBuffer<MYFLT> frameBuffer;

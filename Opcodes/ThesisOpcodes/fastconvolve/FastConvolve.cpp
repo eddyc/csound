@@ -7,7 +7,7 @@
 //
 
 #include "FastConvolve.hpp"
-#include "./common/Plot.hpp"
+#include "../new_common/Plot.hpp"
 #include <fstream>
 #include <netcdf.h>
 #include <stdio.h>
@@ -64,7 +64,6 @@ void FastConvolve::openDat()
 {
     DATFile datfile(allocator, filename);
     allocateDataInputStructures(128, 368);
-
     for (int i = 0; i < datfile.magnitudes.rowCount; ++i) {
         auto mags = datfile.magnitudes[i];
         auto phases = datfile.phases[i];
