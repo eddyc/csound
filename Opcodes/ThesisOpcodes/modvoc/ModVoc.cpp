@@ -8,57 +8,32 @@
 
 #include "ModVoc.hpp"
 #include <stdlib.h>
-int ModVoc::init() {
+int ModVoc::init()
+{
+    CSOUND* cs = (CSOUND*)csound;
 
-    cs = (CSOUND *)csound;
-    ksmps = cs->GetKsmps(cs);
-    plotter = Plotter<double>();
-    new (&input) Vec(((MYFLT *)inargs.data(0)), ksmps);
-    new (&output) Vec(((MYFLT *)outargs.data(0)), ksmps);
-    windowSize = pow(2, 15);
-    hopSize = windowSize / 8;
-
-    function<MYFLT *(size_t)> allocator = [&](size_t count) -> MYFLT * {
-        return (MYFLT *)(cs->Calloc(cs, sizeof(MYFLT) * count));
+    const int ksmps = cs->GetKsmps(cs);
+    allocator = [&](size_t count) -> MYFLT* {
+        return (MYFLT*)(cs->Calloc(cs, sizeof(MYFLT) * count));
     };
+    new (&ain) Vec(((MYFLT*)inargs.data(0)), ksmps);
+    new (&aout) Vec(((MYFLT*)outargs.data(0)), ksmps);
 
-    new (&window) Vec(allocator(windowSize), windowSize);
-    new (&frameBuffer) FrameBuffer(ksmps, windowSize, hopSize, allocator);
-    new (&dft) DFT<MYFLT>((size_t)windowSize, allocator);
-    setWindow();
+    hopSize = 256;
+    frameSize = 1024;
+
+    new (&frameBuffer) FrameBuffer<MYFLT>(ksmps, hopSize, frameSize, allocator, false);
     return OK;
 }
 
-void ModVoc::setWindow() {
-    window.sineWindow();
-    plotter.x(window);
+void ModVoc::setWindow()
+{
 }
 
-static MYFLT inMax = 0;
-static MYFLT outMax = 0;
-
-int ModVoc::kperf() {
-
-    Vec in = Vec((MYFLT *)input.data, cs->GetKsmps(cs));
-    Vec out = Vec((MYFLT *)output.data, cs->GetKsmps(cs));
-
-    frameBuffer.process(in, out, [&](Vec inputFrame, Vec outputFrame) {
-        Vec::copy(inputFrame, outputFrame);
+int ModVoc::kperf()
+{
+    frameBuffer.process(ain, aout, [&](Vec input, Vec output) -> void {
+        Vec::copy(input, output);
     });
-
-    for (int i = 0; i < in.elementCount; ++i) {
-
-        if (in[i] > inMax) {
-
-            inMax = in[i];
-        }
-
-        if (out[i] > outMax) {
-            outMax = out[i];
-        }
-    }
-
-    printf("%f %f\n", inMax, outMax);
-
     return OK;
 }

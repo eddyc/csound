@@ -15,7 +15,8 @@ FrameBuffer<T>::FrameBuffer(const size_t inputSize,
       inputSize(inputSize),
       hopSize(hopSize),
       windowSize(windowSize),
-      overlap(overlap)
+      overlap(overlap),
+      slices((double)inputSize / (double)hopSize)
 {
     size_t sizes[3] = {inputSize, hopSize, windowSize};
     sort(sizes, sizes + 3);
@@ -50,36 +51,36 @@ void FrameBuffer<T>::process(Vector<T>& input,
         exit(-1);
     }
 
-    const double slices = inputSize / hopSize;
-    if (inputSize >= hopSize) {
-        for (size_t i = 0; i < slices; ++i) {
-            const auto inputSlice = input.sub(hopSize, i * hopSize);
-            inBuffer.push(inputSlice);
-            bufferedInputSamples += inputSize;
-            bufferedInputSamples %= hopSize;
-            if (bufferedInputSamples == 0) {
-                outFrame.fill(0);
-                Vector<T>::copy(inBuffer, inFrame);
-                callback(inFrame, outFrame);
-                inFrame.fill(0);
+    // if (inputSize >= hopSize) {
+    for (size_t i = 0; i < slices; ++i) {
+        int vecSize = inputSize >= hopSize ? hopSize : input.elementCount;
+        const auto inputSlice = input.sub(vecSize, i * vecSize);
+        inBuffer.push(inputSlice);
+        bufferedInputSamples += inputSize;
+        bufferedInputSamples %= vecSize;
+        if (bufferedInputSamples == 0) {
+            outFrame.fill(0);
+            Vector<T>::copy(inBuffer, inFrame);
+            callback(inFrame, outFrame);
+            inFrame.fill(0);
 
-                if (overlap == true) {
-                    outBuffer.add(outFrame);
-                }
-                else {
-                    Vector<T>::copy(outFrame, outBuffer);
-                }
-
-                const auto temp = outBuffer.sub(hopSize, 0);
-                Vector<T>::copy(temp, output.sub(hopSize, i * hopSize));
+            if (overlap == true) {
+                outBuffer.add(outFrame);
             }
-            outBuffer.shift(-hopSize);
+            else {
+                Vector<T>::copy(outFrame, outBuffer);
+            }
+
+            const auto temp = outBuffer.sub(vecSize, 0);
+            Vector<T>::copy(temp, output.sub(vecSize, i * vecSize));
         }
-    }
-    else {
-        cout << "FrameBuffer: input size less than or not equal to hopsize" << endl;
-        exit(-1);
+        outBuffer.shift(-vecSize);
     }
 }
+// else {
+//     cout << "FrameBuffer: input size less than or not equal to hopsize" <<
+//     endl; exit(-1);
+// }
+// }
 template class FrameBuffer<double>;
 template class FrameBuffer<float>;

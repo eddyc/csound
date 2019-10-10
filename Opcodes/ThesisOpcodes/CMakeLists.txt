@@ -1,8 +1,8 @@
-option(BUILD_DYNAMICWARPING_OPCODES "Build the dynamicwarping opcodes" ON)
+option(BUILD_DYNAMICWARPING_OPCODES "Build the dynamicwarping opcodes" OFF)
 option(BUILD_UKFFORMANT_OPCODES "Build the ukfformant opcodes" OFF)
-option(BUILD_MODVOC_OPCODE "Build the modulation vocoder opcode" OFF)
-option(BUILD_FASTCONVOLVE_OPCODES "Build the fastconvolve opcode" ON)
-
+option(BUILD_MODVOC_OPCODE "Build the modulation vocoder opcode" ON)
+option(BUILD_FASTCONVOLVE_OPCODES "Build the fastconvolve opcode" OFF)
+set(__USE_ACCELERATE__ 1)
 if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
   set(CS_LIB CsoundLib64)
 
@@ -55,40 +55,44 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
       modvoc/module.cpp
       modvoc/ModVoc.cpp
       modvoc/ModVoc.hpp
-      common/RingBuffer.hpp
-      common/RingBuffer.cpp
-      common/FrameBuffer.hpp
-      common/FrameBuffer.cpp
-      common/SignalData/DFT.hpp
-      common/SignalData/DFT.cpp
-      common/SignalData/Plotter.cpp
-      common/SignalData/Plotter.hpp
-      common/SignalData/Matrix.hpp
-      common/SignalData/Matrix.cpp
-      common/SignalData/MatrixMaths.hpp
-      common/SignalData/MatrixMathsAccelerate.cpp
-      common/SignalData/Vector.hpp
-      common/SignalData/Vector.cpp
-      common/SignalData/VectorMaths.hpp
-      common/SignalData/VectorMathsAccelerate.cpp
-      common/SignalData/StridedVectorMaths.hpp
-      common/SignalData/StridedVectorMathsAccelerate.cpp)
+      new_common/Maths.hpp
+      new_common/Maths.cpp
+      new_common/FrameBuffer.hpp
+      new_common/FrameBuffer.cpp
+      new_common/Vector.hpp
+      new_common/Vector.cpp)
 
   find_package(HDF5)
-  find_library(ACCELERATE Accelerate)
   check_deps(BUILD_MODVOC_OPCODE HDF5_FOUND)
   if(BUILD_MODVOC_OPCODE)
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
     message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 
     set(CMAKE_CXX_STANDARD 17)
-    make_plugin(modvoc "${SOURCES}")
-    target_include_directories(modvoc
-                               PRIVATE ${HDF5_INCLUDE_DIRS}
-                                       ${ACCELERATE_H}
-                                       modvoc
-                                       common)
-    target_link_libraries(modvoc ${HDF5_LIBRARIES} ${ACCELERATE})
+
+    if(APPLE)
+
+      find_library(ACCELERATE Accelerate)
+      make_plugin(modvoc "${SOURCES}")
+      include_directories()
+      target_include_directories(
+        modvoc
+        PRIVATE
+          ${HDF5_INCLUDE_DIRS}
+          ${ACCELERATE_H}
+          /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
+          modvoc
+          common)
+      target_link_libraries(modvoc ${HDF5_LIBRARIES} ${ACCELERATE})
+
+    else()
+
+      make_plugin(modvoc "${SOURCES}")
+      target_include_directories(modvoc
+                                 PRIVATE ${HDF5_INCLUDE_DIRS} modvoc common)
+      target_link_libraries(modvoc ${HDF5_LIBRARIES})
+    endif()
+
   endif()
 endif()
 
@@ -216,14 +220,19 @@ if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
       fastconvolve/FastConvolve.hpp)
 
   find_library(ACCELERATE Accelerate)
-  find_path(cblas_PATH cblas.h PATHS /System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/)
+  find_path(
+    cblas_PATH cblas.h
+    PATHS
+      /System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
+    )
   mark_as_advanced(ACCELERATE)
   find_package(NetCDF)
   make_plugin(fastconvolve "${SOURCES}")
   include_directories(${ACCELERATE_H} ${NETCDF_INCLUDES} ${cblas_PATH})
-  target_link_libraries(fastconvolve ${ACCELERATE} ${NETCDF_LIBRARIES} ${BLAS})
+  target_link_libraries(fastconvolve
+                        ${ACCELERATE}
+                        ${NETCDF_LIBRARIES}
+                        ${BLAS})
 endif()
 
-
 check_include_file(hdf5.h HDF5_H)
-

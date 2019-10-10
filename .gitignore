@@ -218,3 +218,4 @@ CMakeLists.txt.user
 
 # emacs autosaved files
 \#*\#
+Emscripten/*.zip

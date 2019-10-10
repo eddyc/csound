@@ -127,8 +127,8 @@ int CppSound::perform()
   std::string command = getCommand();
   if(command.find("-") == 0)
     {
-      const char *argv_[] = {"csound", getFilename().c_str(), 0};
-      returnValue = perform(2, argv_);
+      // const char *argv_[] = {"csound", getFilename().c_str(), 0};
+      // returnValue = perform(2, argv_);
     }
   else
     {

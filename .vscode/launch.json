@@ -7,6 +7,17 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug Modvoc",
+            "program": "/usr/local/bin/csound",
+            "args": [
+                "${workspaceFolder}/Opcodes/ThesisOpcodes/modvoc/test/test.csd"
+            ],
+            "cwd": "${workspaceFolder}/build",
+            "preLaunchTask": "buildinstall"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug Sofa",
             "program": "/usr/local/bin/csound",
             "args": [

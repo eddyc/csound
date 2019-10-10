@@ -10,6 +10,7 @@ private:
     const size_t inputSize, hopSize, windowSize;
     const bool overlap;
     size_t bufferedInputSamples = 0;
+    const double slices;
 
 public:
     FrameBuffer(const size_t inputSize,
