@@ -7,7 +7,7 @@
 //
 
 #include "Plot.hpp"
-
+#include "Vector.hpp"
 static FILE* gnucmd = popen("gnuplot", "w");
 const char* fileName = "/Volumes/ramdisk/currentPlot";
 const char* fileNameA = "/Volumes/ramdisk/currentPlotA";
@@ -53,7 +53,7 @@ void Plot<T>::closeFile(std::ofstream& tmp)
 }
 
 template <typename T>
-void Plot<T>::x(Vector<T> input)
+void Plot<T>::x(const Vector<T>& input)
 {
     std::ostringstream cmdstr;
     std::ofstream tmp = openFile(fileName);
@@ -71,7 +71,7 @@ void Plot<T>::x(Vector<T> input)
 }
 
 template <typename T>
-void Plot<T>::image(Matrix<T> input, int offsetX, int offsetY)
+void Plot<T>::image(const Matrix<T>& input, int offsetX, int offsetY)
 {
     std::ostringstream cmdstr;
     std::ofstream tmp = openFile(fileName);
@@ -96,7 +96,7 @@ void Plot<T>::image(Matrix<T> input, int offsetX, int offsetY)
 }
 
 template <typename T>
-void Plot<T>::image(Matrix<T> inputA, int offsetX, int offsetY, Vector<T> inputB)
+void Plot<T>::image(const Matrix<T>& inputA, int offsetX, int offsetY, const Vector<T>& inputB)
 {
     std::ostringstream cmdstr;
     std::ofstream tmpA = openFile(fileNameA);

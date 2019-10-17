@@ -15,6 +15,7 @@ class DFT {
 public:
     DFT(function<double*(size_t)> allocator, size_t log2n);
     void realToPolar(const Vec& inputFrame, const Vec& outputMags, const Vec& outputPhases);
+    void realToComplex(const Vec& inputFrame, const Vec& realOut, const Vec& complexOut);
     void polarToReal(const Vec& inputMags, const Vec& inputPhases, const Vec& outputFrame);
     void inPlaceForwardComplex(const Vec& real, const Vec& imag);
 };

@@ -1,10 +1,16 @@
 #include "Vector.hpp"
+#include "Maths.hpp"
 #include <Accelerate/Accelerate.h>
 
 using namespace std;
 template <typename T>
 Vector<T>::Vector(function<T*(size_t input)> memoryAllocator, size_t elementCount)
     : data(memoryAllocator(elementCount)), elementCount(elementCount)
+{
+}
+
+template <typename T>
+Vector<T>::Vector() : data(nullptr), elementCount(0)
 {
 }
 
@@ -96,6 +102,24 @@ const Vector<float>& Vector<float>::multiply(const float value) const
     return *this;
 }
 
+template <typename T>
+const Vector<T>& Vector<T>::power(const Vector<T>& power) const
+{
+    vecVPower(data, power.data, data, elementCount);
+    return *this;
+}
+
+template <typename T>
+void Vector<T>::power(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector power: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vecVPower(a.data, b.data, output.data, a.elementCount);
+}
+
 template <>
 const Vector<double>& Vector<double>::reverse() const
 {
@@ -136,28 +160,29 @@ void Vector<float>::multiply(const Vector<float>& a,
     vDSP_vmul(a.data, 1, b.data, 1, (float*)output.data, 1, a.elementCount);
 }
 
-template <>
-void Vector<double>::add(const Vector<double>& a,
-                         const Vector<double>& b,
-                         const Vector<double>& output)
+template <typename T>
+void Vector<T>::add(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output)
 {
     if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
         cout << "Vector multiply: vectors are not the same size" << endl;
         exit(-1);
     }
 
-    vDSP_vaddD(a.data, 1, b.data, 1, (double*)output.data, 1, a.elementCount);
+    vecVAdd(a.data, b.data, output.data, a.elementCount);
 }
 
-template <>
-void Vector<float>::add(const Vector<float>& a, const Vector<float>& b, const Vector<float>& output)
+template <typename T>
+const Vector<T>& Vector<T>::add(const Vector<T>& input) const
 {
-    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
-        cout << "Vector multiply: vectors are not the same size" << endl;
-        exit(-1);
-    }
+    vecVAdd(input.data, data, data, elementCount);
+    return *this;
+}
 
-    vDSP_vadd(a.data, 1, b.data, 1, (float*)output.data, 1, a.elementCount);
+template <typename T>
+const Vector<T>& Vector<T>::add(const T input) const
+{
+    vecSAdd(data, input, data, elementCount);
+    return *this;
 }
 
 template <>
@@ -230,6 +255,13 @@ void Vector<float>::magnitude(const Vector<float>& real,
     vDSP_zvmags(&input, 1, (float*)magnitude.data, 1, magnitude.elementCount);
 }
 
+template <typename T>
+void Vector<T>::interpolate(const Vector<T>& input,
+                            const Vector<T>& indices,
+                            const Vector<T>& output)
+{
+}
+
 template <>
 const Vector<float>& Vector<float>::ramp(float start, float end) const
 {
@@ -247,21 +279,6 @@ const Vector<double>& Vector<double>::ramp(double start, double end) const
 }
 
 template <>
-const Vector<float>& Vector<float>::add(const Vector<float>& input) const
-{
-    vDSP_vadd((const float*)input.data, 1, (const float*)data, 1, (float*)data, 1, elementCount);
-    return *this;
-}
-
-template <>
-const Vector<double>& Vector<double>::add(const Vector<double>& input) const
-{
-    vDSP_vaddD((const double*)input.data, 1, (const double*)data, 1,
-               (double*)data, 1, elementCount);
-    return *this;
-}
-
-template <>
 const Vector<float>& Vector<float>::hanningWindow() const
 {
     float* data = (float*)this->data;
@@ -274,6 +291,26 @@ const Vector<double>& Vector<double>::hanningWindow() const
 {
     double* data = (double*)this->data;
     vDSP_hann_windowD(data, this->elementCount, vDSP_HANN_DENORM);
+    return *this;
+}
+
+template <>
+const Vector<float>& Vector<float>::sineWindow() const
+{
+    float* data = (float*)this->data;
+    for (size_t i = 0; i < elementCount; ++i) {
+        data[i] = sin((((float)i + 1.) - 0.5) * M_PI / elementCount);
+    }
+    return *this;
+}
+
+template <>
+const Vector<double>& Vector<double>::sineWindow() const
+{
+    double* data = (double*)this->data;
+    for (size_t i = 0; i < elementCount; ++i) {
+        data[i] = sin((((double)i + 1.) - 0.5) * M_PI / elementCount);
+    }
     return *this;
 }
 

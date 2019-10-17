@@ -1,5 +1,10 @@
-#if defined(__APPLE__)
-#include <Accelerate/Accelerate.h>
-const auto vadd = vDSP_vadd;
-const auto vaddD = vDSP_vaddD;
-#endif
+#include "Vector.hpp"
+// #define __USE_ACCELERATE__
+
+template <typename T>
+void vecVAdd(const T* a, const T* b, T* output, size_t elementCount);
+template <typename T>
+void vecSAdd(const T* a, const T scalar, T* output, size_t elementCount);
+
+template <typename T>
+void vecVPower(const T* base, const T* exponent, T* output, size_t elementCount);

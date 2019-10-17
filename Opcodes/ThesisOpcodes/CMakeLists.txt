@@ -55,10 +55,18 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
       modvoc/module.cpp
       modvoc/ModVoc.cpp
       modvoc/ModVoc.hpp
+      modvoc/LogYPsd.hpp
+      modvoc/LogYPsd.cpp
       new_common/Maths.hpp
       new_common/Maths.cpp
       new_common/FrameBuffer.hpp
       new_common/FrameBuffer.cpp
+      new_common/Interpolator.hpp
+      new_common/Interpolator.cpp
+      new_common/DFT.hpp
+      new_common/DFT.cpp
+      new_common/Plot.hpp
+      new_common/Plot.cpp
       new_common/Vector.hpp
       new_common/Vector.cpp)
 
@@ -83,7 +91,10 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
           /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
           modvoc
           common)
-      target_link_libraries(modvoc ${HDF5_LIBRARIES} ${ACCELERATE})
+      target_link_libraries(modvoc
+                            ${HDF5_LIBRARIES}
+                            ${ACCELERATE}
+                            ${LIBSNDFILE_LIBRARY})
 
     else()
 

@@ -30,6 +30,23 @@ void DFT::realToPolar(const Vec& inputFrame, const Vec& outputMags, const Vec& o
     cblas_dcopy((u_int32_t)N / 2 + 1, &interlacedPolar.data[1], 2,
                 (double*)outputPhases.data, 1);
 }
+
+void DFT::realToComplex(const Vec& inputFrame, const Vec& realOut, const Vec& imagOut)
+{
+    if (realOut.elementCount != imagOut.elementCount ||
+        inputFrame.elementCount != N || realOut.elementCount != N / 2 + 1) {
+        cout << "DFT::realToPolar inputs not sane" << endl;
+        exit(-1);
+    }
+
+    DSPDoubleSplitComplex zOutput = {.realp = realOut.data, .imagp = imagOut.data};
+    vDSP_ctozD((DSPDoubleComplex*)inputFrame.data, 2, &zInput, 1, N / 2);
+    vDSP_fft_zropD(fftSetup, &zInput, 1, &zOutput, 1, log2N, kFFTDirection_Forward);
+    zOutput.realp[N / 2] = zInput.imagp[0];
+    zOutput.imagp[N / 2] = 0;
+    zOutput.imagp[0] = 0;
+}
+
 void DFT::polarToReal(const Vec& inMags, const Vec& inPhases, const Vec& outputFrame)
 {
     if (inMags.elementCount != inPhases.elementCount ||
