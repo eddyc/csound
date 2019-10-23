@@ -1,4 +1,5 @@
 #include "Plot.hpp"
+#include "Socket.hpp"
 #include <functional>
 #include <iostream>
 using namespace std;
@@ -6,7 +7,8 @@ using namespace std;
 #ifndef _Vector_
 #define _Vector_
 template <typename T>
-class Vector {
+class Vector
+{
 private:
 public:
     T* data = nullptr;
@@ -34,17 +36,22 @@ public:
     static void multiply(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
     static void add(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output);
     static void magnitude(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& magnitude);
+    static void magnitudeSquared(const Vector<T>& real,
+                                 const Vector<T>& imag,
+                                 const Vector<T>& magnitudeSquared);
     static void angle(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& angle);
     static void phase(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& phase);
     static void interpolate(const Vector<T>& input,
                             const Vector<T>& indices,
                             const Vector<T>& output);
     T operator[](const size_t index) const;
+    void send(const string label) const;
     void print() const;
 };
 
 template <typename T>
-class Matrix : public Vector<T> {
+class Matrix : public Vector<T>
+{
 public:
     const size_t rowCount, columnCount;
     Matrix(function<T*(size_t input)> memoryAllocator, const size_t, const size_t);
@@ -55,7 +62,8 @@ public:
 };
 
 template <typename T>
-class VectorFactory {
+class VectorFactory
+{
     function<T*(size_t input)> memoryAllocator;
 
 public:

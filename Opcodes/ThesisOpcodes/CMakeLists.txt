@@ -1,7 +1,7 @@
 option(BUILD_DYNAMICWARPING_OPCODES "Build the dynamicwarping opcodes" OFF)
 option(BUILD_UKFFORMANT_OPCODES "Build the ukfformant opcodes" OFF)
 option(BUILD_MODVOC_OPCODE "Build the modulation vocoder opcode" ON)
-option(BUILD_FASTCONVOLVE_OPCODES "Build the fastconvolve opcode" OFF)
+option(BUILD_FASTCONVOLVE_OPCODES "Build the fastconvolve opcode" ON)
 set(__USE_ACCELERATE__ 1)
 if(BUILD_SOFA_CONVERT AND NOT EMSCRIPTEN)
   set(CS_LIB CsoundLib64)
@@ -51,12 +51,15 @@ endif()
 
 if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
 
+  find_package(JsonCpp)
   set(SOURCES
       modvoc/module.cpp
       modvoc/ModVoc.cpp
       modvoc/ModVoc.hpp
       modvoc/LogYPsd.hpp
       modvoc/LogYPsd.cpp
+      new_common/Socket.hpp
+      new_common/Socket.cpp
       new_common/Maths.hpp
       new_common/Maths.cpp
       new_common/FrameBuffer.hpp
@@ -88,13 +91,15 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
         PRIVATE
           ${HDF5_INCLUDE_DIRS}
           ${ACCELERATE_H}
+          ${JSONCPP_INCLUDE_DIRS}
           /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
           modvoc
           common)
       target_link_libraries(modvoc
                             ${HDF5_LIBRARIES}
                             ${ACCELERATE}
-                            ${LIBSNDFILE_LIBRARY})
+                            ${LIBSNDFILE_LIBRARY}
+                            ${JSONCPP_LIBRARY})
 
     else()
 
@@ -212,10 +217,15 @@ if(BUILD_UKFFORMANT_OPCODES AND NOT EMSCRIPTEN)
 endif()
 
 if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
+  find_package(JsonCpp)
 
   set(SOURCES
       new_common/Vector.hpp
       new_common/Vector.cpp
+      new_common/Maths.hpp
+      new_common/Maths.cpp
+      new_common/Socket.hpp
+      new_common/Socket.cpp
       new_common/FrameBuffer.hpp
       new_common/FrameBuffer.cpp
       new_common/DFT.hpp
@@ -234,15 +244,19 @@ if(BUILD_FASTCONVOLVE_OPCODES AND NOT EMSCRIPTEN)
   find_path(
     cblas_PATH cblas.h
     PATHS
-      /System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
+      /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/Headers/
     )
   mark_as_advanced(ACCELERATE)
   find_package(NetCDF)
   make_plugin(fastconvolve "${SOURCES}")
-  include_directories(${ACCELERATE_H} ${NETCDF_INCLUDES} ${cblas_PATH})
+  include_directories(${ACCELERATE_H}
+                      ${NETCDF_INCLUDES}
+                      ${cblas_PATH}
+                      ${JSONCPP_INCLUDE_DIRS})
   target_link_libraries(fastconvolve
                         ${ACCELERATE}
                         ${NETCDF_LIBRARIES}
+                        ${JSONCPP_LIBRARY}
                         ${BLAS})
 endif()
 

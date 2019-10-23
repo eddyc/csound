@@ -49,8 +49,7 @@ void Interpolator<T>::operator()(const Vector<T>& input, Vector<T>& output)
 
         if (newIndex < 0 || newIndex > input.elementCount - 1) {
             output.data[i] = NAN;
-        }
-        else {
+        } else {
             T modulo = fmod(sortedIndices[i], 1);
             T startValue = input[startIndex];
             T endValue = input[endIndex];

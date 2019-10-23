@@ -26,6 +26,8 @@ int ModVoc::init()
 
     new (&magnitudes) Vec(allocator, frameSize / 2 + 1);
     new (&phases) Vec(allocator, frameSize / 2 + 1);
+    new (&real) Vec(allocator, frameSize / 2 + 1);
+    new (&imag) Vec(allocator, frameSize / 2 + 1);
     new (&window) Vec(allocator, frameSize);
     setWindow(window);
 
@@ -64,9 +66,9 @@ int ModVoc::kperf()
 
         Vec::multiply(input, window, input);
 
-        dft.realToPolar(input, magnitudes, phases);
-
-        logYPsd(magnitudes, magnitudes);
+        dft.realToComplex(input, real, imag);
+        real.multiply(0.5), imag.multiply(0.5);
+        logYPsd(real, imag, magnitudes);
 
         dft.polarToReal(magnitudes, phases, output);
     });

@@ -14,14 +14,14 @@
 #include <Accelerate/Accelerate.h>
 #include <functional>
 #include <plugin.h>
-#include <samplerate.h>
 using namespace std;
 typedef Vector<MYFLT> Vec;
 typedef Matrix<MYFLT> Mat;
 
 #ifndef _FastConvolve_
 #define _FastConvolve_
-class FastConvolve : public csnd::Plugin<1, 5> {
+class FastConvolve : public csnd::Plugin<1, 5>
+{
     std::function<MYFLT*(size_t)> allocator;
     std::string filename;
     Vec ain, aout, mags, phases, window, convBuffer, convTail;

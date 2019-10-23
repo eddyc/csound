@@ -4,7 +4,8 @@
 using namespace std;
 
 template <typename T>
-class Interpolator {
+class Interpolator
+{
 private:
     Vector<T> sortedIndices;
 

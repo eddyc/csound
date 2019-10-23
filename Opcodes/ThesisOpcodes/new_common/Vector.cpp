@@ -1,5 +1,6 @@
 #include "Vector.hpp"
 #include "Maths.hpp"
+#include "Socket.hpp"
 #include <Accelerate/Accelerate.h>
 
 using namespace std;
@@ -64,8 +65,7 @@ const Vector<T>& Vector<T>::push(const Vector<T>& input) const
 
     if (length == elementCount) {
         memcpy((void*)data, (const void*)input.data, sizeof(T) * elementCount);
-    }
-    else {
+    } else {
         const size_t remainder = elementCount - length;
         memcpy((void*)data, (void*)&data[length], sizeof(T) * remainder);
         memcpy((void*)&data[remainder], (const void*)input.data,
@@ -220,39 +220,28 @@ void Vector<float>::angle(const Vector<float>& real,
     vDSP_zvphas(&input, 1, (float*)angle.data, 1, angle.elementCount);
 }
 
-template <>
-void Vector<double>::magnitude(const Vector<double>& real,
-                               const Vector<double>& imag,
-                               const Vector<double>& magnitude)
+template <typename T>
+void Vector<T>::magnitude(const Vector<T>& real, const Vector<T>& imag, const Vector<T>& magnitude)
 {
     if (real.elementCount != imag.elementCount || real.elementCount != magnitude.elementCount) {
         cout << "Vector magnitude: vectors are not the same size" << endl;
         exit(-1);
     }
 
-    DSPDoubleSplitComplex input = {
-        .realp = (double*)real.data,
-        .imagp = (double*)imag.data,
-    };
-
-    vDSP_zvmagsD(&input, 1, (double*)magnitude.data, 1, magnitude.elementCount);
+    vecVMagnitude(real.data, imag.data, magnitude.data, real.elementCount);
 }
 
-template <>
-void Vector<float>::magnitude(const Vector<float>& real,
-                              const Vector<float>& imag,
-                              const Vector<float>& magnitude)
+template <typename T>
+void Vector<T>::magnitudeSquared(const Vector<T>& real,
+                                 const Vector<T>& imag,
+                                 const Vector<T>& magnitude)
 {
     if (real.elementCount != imag.elementCount || real.elementCount != magnitude.elementCount) {
         cout << "Vector magnitude: vectors are not the same size" << endl;
         exit(-1);
     }
 
-    DSPSplitComplex input = {
-        .realp = (float*)real.data,
-        .imagp = (float*)imag.data,
-    };
-    vDSP_zvmags(&input, 1, (float*)magnitude.data, 1, magnitude.elementCount);
+    vecVMagnitudeSquared(real.data, imag.data, magnitude.data, real.elementCount);
 }
 
 template <typename T>
@@ -319,13 +308,11 @@ const Vector<T>& Vector<T>::shift(int amount) const
 {
     if (abs(amount) >= elementCount) {
         fill(0);
-    }
-    else if (amount > 0) {
+    } else if (amount > 0) {
         const size_t count = elementCount - amount;
         memcpy((void*)&data[amount], (const void*)data, count * sizeof(T));
         this->sub(abs(amount), 0).fill(0);
-    }
-    else if (amount < 0) {
+    } else if (amount < 0) {
         const size_t count = elementCount + amount;
         memcpy((void*)data, (const void*)&data[abs(amount)], count * sizeof(T));
         this->sub(abs(amount), count).fill(0);
@@ -364,7 +351,7 @@ void Vector<T>::copy(const Vector<T>& from, const Vector<T>& to)
 }
 
 template <typename T>
-T Vector<T>::operator[](const size_t index) const
+inline T Vector<T>::operator[](const size_t index) const
 {
     assert(index < elementCount);
     return this->data[index];
@@ -394,6 +381,16 @@ Vector<T> Matrix<T>::operator[](const size_t index) const
 {
     assert(index < rowCount);
     return Vector<T>((T*)&this->data[index * columnCount], columnCount);
+}
+
+template <typename T>
+void Vector<T>::send(const string label) const
+{
+    if constexpr (sizeof(T) == sizeof(double)) {
+        sendDataDouble((double*)data, (const char*)label.c_str(), (size_t)elementCount);
+    } else {
+        sendDataFloat((float*)data, (const char*)label.c_str(), (size_t)elementCount);
+    }
 }
 
 template class Vector<double>;

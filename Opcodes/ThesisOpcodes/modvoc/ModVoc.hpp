@@ -18,7 +18,7 @@ typedef Matrix<MYFLT> Mat;
 class ModVoc : public csnd::Plugin<1, 1> {
 public:
     FrameBuffer<MYFLT> frameBuffer;
-    Vec ain, aout, magnitudes, phases, window, audiofile;
+    Vec ain, aout, magnitudes, phases, window, audiofile, real, imag;
     function<MYFLT*(size_t)> allocator;
     LogYPsd<MYFLT> logYPsd;
     Plot<double> plot;

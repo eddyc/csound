@@ -9,16 +9,16 @@ ksmps = 512
 nchnls = 2
 0dbfs = 1
 
-gSpathL = "/Users/eddyc/Documents/Software/HRTF Project/Mesh2HRTF/Meshes/Sphere/left/EvaluationGrid_GeneralTF.sofa"
-gSpathR = "/Users/eddyc/Documents/Software/HRTF Project/Mesh2HRTF/Meshes/Sphere/right/EvaluationGrid_GeneralTF.sofa"
+gSpathL = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Victor/test-left/EvaluationGrid_GeneralTF.sofa"
+gSpathR = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Victor/test-right/EvaluationGrid_GeneralTF.sofa"
 instr 1
 
     kin init 0
 
-    ain = vco2(0.1, 140)
+    ; ain = vco2(0.1, 140)
     ; ain = oscil(0.1, 220, 1)
 
-    ; ain diskin2 "input.wav", 1, 0, 1
+    ain diskin2 "input.wav", 1, 0, 1
     kline line 0, p3, 710
 
     printk2 kline

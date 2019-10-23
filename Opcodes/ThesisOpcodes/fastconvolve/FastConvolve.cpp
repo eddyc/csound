@@ -32,8 +32,7 @@ int FastConvolve::init()
 
     if (fileType == "sofa") {
         openSofa();
-    }
-    else if (fileType == "dat") {
+    } else if (fileType == "dat") {
         openDat();
     }
 
@@ -87,8 +86,7 @@ void FastConvolve::openSofa()
 
     if (type == "IR") {
         openSofaIR(sofaFile);
-    }
-    else if (type == "TF") {
+    } else if (type == "TF") {
         openSofaTF(sofaFile);
     }
 }
@@ -142,7 +140,6 @@ void FastConvolve::openSofaTF(NetCDFFile& sofaFile)
         getMirror(sofaReal[i], tempReal, 1);
         getMirror(sofaImag[i], tempImag, -1);
         dft.inPlaceForwardComplex(tempReal, tempImag);
-        Plot<MYFLT>::x(tempReal);
         Vec::copy(tempReal, irData[i]);
         auto sofaRow = irData[i];
         auto fileMagRow = fileMags[i];

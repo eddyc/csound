@@ -67,8 +67,7 @@ void FrameBuffer<T>::process(Vector<T>& input,
                     const double overlapMult = windowSize / inputSize;
                     outFrame.multiply(1. / overlapMult);
                     outBuffer.add(outFrame);
-                }
-                else {
+                } else {
                     Vector<T>::copy(outFrame, outBuffer);
                 }
 
@@ -77,8 +76,7 @@ void FrameBuffer<T>::process(Vector<T>& input,
             }
             outBuffer.shift(-hopSize);
         }
-    }
-    else {
+    } else {
         inBuffer.push(input);
         bufferedInputSamples += inputSize;
         bufferedInputSamples %= hopSize;
@@ -92,8 +90,7 @@ void FrameBuffer<T>::process(Vector<T>& input,
                 const double overlapMult = windowSize / hopSize;
                 outFrame.multiply(1. / overlapMult);
                 outBuffer.add(outFrame);
-            }
-            else {
+            } else {
                 Vector<T>::copy(outFrame, outBuffer);
             }
         }

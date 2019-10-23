@@ -21,7 +21,7 @@
             "name": "Debug Sofa",
             "program": "/usr/local/bin/csound",
             "args": [
-                "/Users/eddyc/Documents/Software/Csound Projects/csound/Opcodes/ThesisOpcodes/sofa/test/test.csd"
+                "${workspaceFolder}/Opcodes/ThesisOpcodes/sofa/test/test.csd"
             ],
             "cwd": "${workspaceFolder}/build",
             "preLaunchTask": "buildinstall"
@@ -32,7 +32,7 @@
             "name": "Debug FastConvolve",
             "program": "/usr/local/bin/csound",
             "args": [
-                "/Users/eddyc/Documents/Software/Csound Projects/csound/Opcodes/ThesisOpcodes/fastconvolve/test/test.csd"
+                "${workspaceFolder}/Opcodes/ThesisOpcodes/fastconvolve/test/test.csd"
             ],
             "cwd": "${workspaceFolder}/build",
             "preLaunchTask": "buildinstall"
