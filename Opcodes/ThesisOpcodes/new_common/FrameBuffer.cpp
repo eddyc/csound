@@ -1,5 +1,4 @@
 #include "FrameBuffer.hpp"
-#include <Accelerate/Accelerate.h>
 
 using namespace std;
 template <typename T>

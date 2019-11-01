@@ -28,6 +28,7 @@ int ModVoc::init()
     new (&phases) Vec(allocator, frameSize / 2 + 1);
     new (&real) Vec(allocator, frameSize / 2 + 1);
     new (&imag) Vec(allocator, frameSize / 2 + 1);
+    new (&logYPsdFrame) Vec(allocator, frameSize / 2 + 1);
     new (&window) Vec(allocator, frameSize);
     setWindow(window);
 
@@ -42,6 +43,12 @@ int ModVoc::init()
     currentSample = 0;
 
     new (&logYPsd) LogYPsd(allocator, fs, frameSize / 2 + 1, hopSize);
+    new (&centreOfGravity) CentreOfGravity(allocator, fs, frameSize / 2 + 1);
+
+    new (&peak_idx) ResizableVector(allocator, centreOfGravity.maximumPeakCount);
+    new (&last_peak_idx) ResizableVector(allocator, centreOfGravity.maximumPeakCount);
+    peak_idx.ramp(centreOfGravity.halfStep + 1,
+                  (centreOfGravity.halfStep * peak_idx.elementCount) + 1);
 
     return OK;
 }
@@ -68,8 +75,9 @@ int ModVoc::kperf()
 
         dft.realToComplex(input, real, imag);
         real.multiply(0.5), imag.multiply(0.5);
-        logYPsd(real, imag, magnitudes);
+        logYPsd(real, imag, logYPsdFrame);
 
+        centreOfGravity(logYPsdFrame, peak_idx, last_peak_idx);
         dft.polarToReal(magnitudes, phases, output);
     });
     return OK;

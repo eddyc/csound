@@ -12,9 +12,10 @@ template <typename T>
 LogYPsd<T>::LogYPsd(function<T*(size_t)> allocator, size_t Fs, size_t binCount, size_t hopSize)
     : ramp(allocator, binCount),
       interpScale(allocator, binCount),
-      detrended(allocator, binCount),
       magnitudes(allocator, binCount),
       interpOut(allocator, binCount),
+      detrended(allocator, binCount),
+      tens(allocator, binCount),
       nom(allocator, binCount),
       denom(allocator, binCount),
       alpha(1. / (tau * (double)Fs / 1000. / (double)hopSize))
@@ -24,7 +25,6 @@ LogYPsd<T>::LogYPsd(function<T*(size_t)> allocator, size_t Fs, size_t binCount, 
 
     interpScale.ramp(erbStep, erbStep * (double)binCount).multiply(1. / 21.4);
     ramp.ramp(0, binCount);
-    Vector<T> tens(allocator, binCount);
     tens.fill(10)
         .power(interpScale)
         .add(-1)
@@ -33,8 +33,18 @@ LogYPsd<T>::LogYPsd(function<T*(size_t)> allocator, size_t Fs, size_t binCount, 
         .multiply(binCount)
         .add(-1);
     Vector<T>::copy(tens, interpScale);
-
+    tens.fill(10);
     new (&interpolator) Interpolator<T>(allocator, interpScale);
+    new (&detrender) Detrender<T>(allocator, binCount);
+}
+
+template <typename T>
+void LogYPsd<T>::filter(const FilterArgument& data, const T alpha)
+{
+    data.currentState.multiply(alpha);
+    data.previousState.multiply(1 - alpha);
+    data.currentState.add(data.previousState);
+    Vector<T>::copy(data.currentState, data.previousState);
 }
 
 template <typename T>
@@ -42,9 +52,18 @@ void LogYPsd<T>::operator()(const Vector<T>& real, const Vector<T>& imag, const 
 {
     Vector<T>::magnitudeSquared(real, imag, magnitudes);
     magnitudes.add(1e-9);
-    magnitudes.send("magnitudes");
     interpolator(magnitudes, interpOut);
-    interpOut.send("interpOut");
+    Vector<T>::copy(interpOut, nom.currentState);
+    Vector<T>::copy(interpOut, denom.currentState);
+    filter(nom, alpha);
+    denom.currentState.add(1e-15);
+    denom.currentState.log10();
+    detrender(denom.currentState, detrended);
+    Vector<T>::subtract(detrended, denom.currentState, denom.currentState);
+    Vector<T>::power(tens, denom.currentState, denom.currentState);
+    denom.currentState.add(1e-9);
+    filter(denom, alpha);
+    Vector<T>::divide(denom.currentState, nom.currentState, output);
 }
 
 template class LogYPsd<double>;

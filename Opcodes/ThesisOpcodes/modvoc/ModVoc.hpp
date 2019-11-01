@@ -8,20 +8,22 @@
 
 #include "../new_common/DFT.hpp"
 #include "../new_common/FrameBuffer.hpp"
-#include "../new_common/Plot.hpp"
+#include "CentreOfGravity.hpp"
 #include "LogYPsd.hpp"
 #include <plugin.h>
 using namespace std;
 typedef Vector<MYFLT> Vec;
 typedef Matrix<MYFLT> Mat;
 
-class ModVoc : public csnd::Plugin<1, 1> {
+class ModVoc : public csnd::Plugin<1, 1>
+{
 public:
     FrameBuffer<MYFLT> frameBuffer;
-    Vec ain, aout, magnitudes, phases, window, audiofile, real, imag;
+    Vec ain, aout, magnitudes, phases, window, audiofile, real, imag, logYPsdFrame;
+    ResizableVector<MYFLT> peak_idx, last_peak_idx;
     function<MYFLT*(size_t)> allocator;
     LogYPsd<MYFLT> logYPsd;
-    Plot<double> plot;
+    CentreOfGravity<MYFLT> centreOfGravity;
     DFT dft;
     size_t frameSize;
     size_t convSize;

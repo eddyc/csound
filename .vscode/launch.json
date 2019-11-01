@@ -13,7 +13,8 @@
                 "${workspaceFolder}/Opcodes/ThesisOpcodes/modvoc/test/test.csd"
             ],
             "cwd": "${workspaceFolder}/build",
-            "preLaunchTask": "buildinstall"
+            "preLaunchTask": "buildinstall",
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "lldb",

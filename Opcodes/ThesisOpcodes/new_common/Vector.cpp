@@ -74,17 +74,30 @@ const Vector<T>& Vector<T>::push(const Vector<T>& input) const
     return *this;
 }
 
-template <>
-const Vector<double>& Vector<double>::fill(double value) const
+template <typename T>
+const Vector<T>& Vector<T>::clear() const
 {
-    vDSP_vfillD(&value, (double*)data, 1, elementCount);
+    memset((void*)data, 0, sizeof(T) * elementCount);
     return *this;
 }
 
-template <>
-const Vector<float>& Vector<float>::fill(float value) const
+template <typename T>
+const T Vector<T>::sum() const
 {
-    vDSP_vfill(&value, (float*)data, 1, elementCount);
+    return vecVSum(data, elementCount);
+}
+
+template <typename T>
+const T Vector<T>::sum(const size_t offset, const size_t count) const
+{
+    assert(offset + count <= elementCount);
+    return vecVSum(&data[offset], count);
+}
+
+template <typename T>
+const Vector<T>& Vector<T>::fill(const T value) const
+{
+    vecVFill(value, data, elementCount);
     return *this;
 }
 
@@ -110,14 +123,11 @@ const Vector<T>& Vector<T>::power(const Vector<T>& power) const
 }
 
 template <typename T>
-void Vector<T>::power(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output)
+void Vector<T>::power(const Vector<T>& base, const Vector<T>& exponent, const Vector<T>& output)
 {
-    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
-        cout << "Vector power: vectors are not the same size" << endl;
-        exit(-1);
-    }
-
-    vecVPower(a.data, b.data, output.data, a.elementCount);
+    assert(base.elementCount == output.elementCount);
+    assert(output.elementCount == exponent.elementCount);
+    vecVPower(base.data, exponent.data, output.data, output.elementCount);
 }
 
 template <>
@@ -134,6 +144,13 @@ const Vector<float>& Vector<float>::reverse() const
     return *this;
 }
 
+template <typename T>
+const Vector<T>& Vector<T>::log10() const
+{
+    vecVLog10(data, data, elementCount);
+    return *this;
+}
+
 template <>
 void Vector<double>::multiply(const Vector<double>& a,
                               const Vector<double>& b,
@@ -145,6 +162,13 @@ void Vector<double>::multiply(const Vector<double>& a,
     }
 
     vDSP_vmulD(a.data, 1, b.data, 1, (double*)output.data, 1, a.elementCount);
+}
+
+template <typename T>
+void Vector<T>::divide(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output)
+{
+    assert(a.elementCount == b.elementCount && a.elementCount == output.elementCount);
+    vecVDivide(a.data, b.data, output.data, output.elementCount);
 }
 
 template <>
@@ -179,9 +203,34 @@ const Vector<T>& Vector<T>::add(const Vector<T>& input) const
 }
 
 template <typename T>
+void Vector<T>::subtract(const Vector<T>& a, const Vector<T>& b, const Vector<T>& output)
+{
+    if (a.elementCount != b.elementCount || a.elementCount != output.elementCount) {
+        cout << "Vector subtract: vectors are not the same size" << endl;
+        exit(-1);
+    }
+
+    vecVSubtract(a.data, b.data, output.data, a.elementCount);
+}
+
+template <typename T>
+const Vector<T>& Vector<T>::subtract(const Vector<T>& input) const
+{
+    vecVSubtract(input.data, data, data, elementCount);
+    return *this;
+}
+
+template <typename T>
 const Vector<T>& Vector<T>::add(const T input) const
 {
     vecSAdd(data, input, data, elementCount);
+    return *this;
+}
+
+template <typename T>
+const Vector<T>& Vector<T>::divide(const T input) const
+{
+    vecSDivide(data, input, data, elementCount);
     return *this;
 }
 
@@ -351,10 +400,48 @@ void Vector<T>::copy(const Vector<T>& from, const Vector<T>& to)
 }
 
 template <typename T>
-inline T Vector<T>::operator[](const size_t index) const
+void Vector<T>::copy(const Vector<T>& from, const Vector<T>& to, const size_t stride)
+{
+    if (to.elementCount != from.elementCount * stride - 1) {
+        cout << "Vector copy: vectors are required the same size" << endl;
+        exit(-1);
+    }
+
+    for (size_t i = 0; i < from.elementCount; ++i) {
+        to[stride * i] = from[i];
+    }
+}
+
+template <typename T>
+inline T& Vector<T>::operator[](const size_t index) const
 {
     assert(index < elementCount);
     return this->data[index];
+}
+
+template <typename T>
+ResizableVector<T>::ResizableVector(function<T*(size_t input)> allocator,
+                                    const size_t allocatedElementCount)
+    : Vector<T>(allocator, allocatedElementCount),
+      allocatedElementCount(allocatedElementCount)
+{
+}
+
+template <typename T>
+ResizableVector<T>::ResizableVector() : Vector<T>(), allocatedElementCount(0)
+{
+}
+
+template <typename T>
+ResizableVector<T>::~ResizableVector()
+{
+}
+
+template <typename T>
+void ResizableVector<T>::setElementCount(const size_t count) const
+{
+    assert(count <= allocatedElementCount);
+    memcpy((void*)&this->elementCount, (const void*)&count, sizeof(size_t));
 }
 
 template <typename T>
@@ -372,8 +459,23 @@ Matrix<T>::Matrix(T* data, const size_t rowCount, const size_t columnCount)
 }
 
 template <typename T>
+Matrix<T>::Matrix() : Vector<T>(), rowCount(0), columnCount(0)
+{
+}
+
+template <typename T>
 Matrix<T>::~Matrix()
 {
+}
+
+template <typename T>
+void Matrix<T>::multiply(const Matrix<T>& a, const Matrix<T>& b, const Matrix<T>& output)
+{
+    assert(a.rowCount == output.rowCount);
+    assert(output.columnCount == b.columnCount);
+    assert(a.columnCount == b.rowCount);
+
+    matMMultiply(a.data, b.data, output.data, a.rowCount, b.columnCount, a.columnCount);
 }
 
 template <typename T>
@@ -393,8 +495,20 @@ void Vector<T>::send(const string label) const
     }
 }
 
+template <typename T>
+void Vector<T>::send(const char* label) const
+{
+    if constexpr (sizeof(T) == sizeof(double)) {
+        sendDataDouble((double*)data, label, (size_t)elementCount);
+    } else {
+        sendDataFloat((float*)data, label, (size_t)elementCount);
+    }
+}
+
 template class Vector<double>;
 template class Vector<float>;
+template class ResizableVector<double>;
+template class ResizableVector<float>;
 template class Matrix<double>;
 template class Matrix<float>;
 template class VectorFactory<double>;

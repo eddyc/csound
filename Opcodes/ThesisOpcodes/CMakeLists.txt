@@ -53,11 +53,14 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
 
   find_package(JsonCpp)
   set(SOURCES
+      new_common/UseAccelerate.hpp
       modvoc/module.cpp
       modvoc/ModVoc.cpp
       modvoc/ModVoc.hpp
       modvoc/LogYPsd.hpp
       modvoc/LogYPsd.cpp
+      modvoc/CentreOfGravity.hpp
+      modvoc/CentreOfGravity.cpp
       new_common/Socket.hpp
       new_common/Socket.cpp
       new_common/Maths.hpp
@@ -66,6 +69,8 @@ if(BUILD_MODVOC_OPCODE AND NOT EMSCRIPTEN)
       new_common/FrameBuffer.cpp
       new_common/Interpolator.hpp
       new_common/Interpolator.cpp
+      new_common/Detrender.hpp
+      new_common/Detrender.cpp
       new_common/DFT.hpp
       new_common/DFT.cpp
       new_common/Plot.hpp
