@@ -7,11 +7,11 @@ project(Csound)
 
 ENABLE_TESTING()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
 set(CMAKE_COMPILER_IS_CLANG 1)
 endif()
 
-message(STATUS "${CMAKE_HOME_DIRECTORY}")
+message(STATUS "Csound directory: ${CMAKE_HOME_DIRECTORY}")
 
 # C++11 needed
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -36,7 +36,8 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CMakePushCheckState)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
+message(STATUS "CMake module path: ${CMAKE_MODULE_PATH}")
 
 # Utility to munge with items in a list.
 #
@@ -176,7 +177,7 @@ endif()
 endif()
 
 if(APPLE)
-set(CMAKE_REQUIRED_INCLUDES time.h)
+list(APPEND CMAKE_REQUIRED_INCLUDES "time.h")
 CHECK_FUNCTION_EXISTS(clock_gettime CLOCK_GETTIME)
 if(${CLOCK_GETTIME})
  message(STATUS  "clock_gettime() found")
@@ -205,11 +206,11 @@ endif()
 
 execute_process (
      COMMAND python -c
-     "import site, sys; sys.stdout.write(site.getusersitepackages())"
-     OUTPUT_VARIABLE PYTHON_USER_SITE_PACKAGES
+     "import site, sys; sys.stdout.write(site.getsitepackages()[0])"
+     OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
    )
 
-SET(PYTHON_MODULE_INSTALL_DIR ${PYTHON_USER_SITE_PACKAGES} CACHE PATH "Python module install dir")
+SET(PYTHON_MODULE_INSTALL_DIR ${PYTHON_SITE_PACKAGES} CACHE PATH "Python module install dir")
 
 set(JAVA_MODULE_INSTALL_DIR ${LIBRARY_INSTALL_DIR} CACHE PATH "Java module install dir")
 set(LUA_MODULE_INSTALL_DIR ${LIBRARY_INSTALL_DIR} CACHE PATH "Lua module install dir")
@@ -227,11 +228,6 @@ if(WIN32 AND NOT MSVC)
     endif()
 
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--add-stdcall-alias")
-endif()
-
-if(MSVC)
-  include_directories(${PROJECT_SOURCE_DIR}/msvc/include)
-  list(APPEND CMAKE_REQUIRED_INCLUDES "${PROJECT_SOURCE_DIR}/msvc/include;${PROJECT_SOURCE_DIR}/msvc/deps/include")
 endif()
 
 if(WIN32)
@@ -505,12 +501,7 @@ SET(BUILD_SHARED_LIBS ON)
 ## HEADER/LIBRARY/OTHER CHECKS ##
 
 # First, required stuff
-if (MSVC)
-  find_library(LIBSNDFILE_LIBRARY NAMES sndfile libsndfile-1 libsndfile)
-else()
-  find_library(LIBSNDFILE_LIBRARY sndfile libsndfile-1)
-endif()
-
+find_library(LIBSNDFILE_LIBRARY NAMES sndfile libsndfile-1 libsndfile)
 
 if(NOT LIBSNDFILE_LIBRARY)
     message(FATAL_ERROR "Csound requires the sndfile library")
@@ -580,13 +571,16 @@ if(NOT MSVC AND REQUIRE_PTHREADS)
     find_library(PTHREAD_LIBRARY pthreadGC2)
   endif()
 
-  if(NOT PTHREAD_LIBRARY)
+  if(NOT (PTHREAD_LIBRARY OR HAIKU))
+      # pthreads are built in to Haiku
       message(STATUS "Csound requires the pthread library")
   endif()
 
   #FIXME this variable is for required include directories, possible bug
-  set(CMAKE_REQUIRED_INCLUDES pthread.h)
-  set(CMAKE_REQUIRED_LIBRARIES pthread)
+  list(APPEND CMAKE_REQUIRED_INCLUDES pthread.h)
+  if (NOT HAIKU)
+    set(CMAKE_REQUIRED_LIBRARIES pthread)
+  endif()
 endif()
 
 
@@ -609,7 +603,7 @@ endif()
 
 find_library(VORBISFILE_LIBRARY vorbisfile)
 check_include_file(libintl.h LIBINTL_HEADER)
-find_path(EIGEN3_INCLUDE_PATH eigen3/Eigen/Dense)
+find_package(Eigen3 3.3 NO_MODULE)
 find_package(GMM)
 find_library(LIBINTL_LIBRARY intl)
 find_package(Gettext)
@@ -689,7 +683,7 @@ include_directories(./util)
 include_directories(./)
 
 #checking pthread functions
-if(REQUIRE_PTHREADS AND PTHREAD_LIBRARY)
+if(REQUIRE_PTHREADS AND (PTHREAD_LIBRARY OR HAIKU))
 
   #list(APPEND libcsound_CFLAGS -DHAVE_PTHREAD)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_PTHREAD")

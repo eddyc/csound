@@ -66,11 +66,11 @@ struct binamp {
   float amp;
 };
 
-struct PVTrace2 : csnd::FPlugin<2, 3> {
+struct PVTrace2 : csnd::FPlugin<2, 5> {
   csnd::AuxMem<float> amps;
   csnd::AuxMem<binamp> binlist;
   static constexpr char const *otypes = "fk[]";
-  static constexpr char const *itypes = "fko";
+  static constexpr char const *itypes = "fkopp";
 
   int init() {
     csnd::Vector<MYFLT> &bins = outargs.vector_data<MYFLT>(1);
@@ -103,7 +103,12 @@ struct PVTrace2 : csnd::FPlugin<2, 3> {
       float thrsh;
       int cnt = 0;
       int bin = 0;
-      std::transform(fin.begin(), fin.end(), amps.begin(),
+      int start = (int) inargs[3];
+      int end = (int) inargs[4];
+      std::transform(fin.begin() + start,
+                     end ? fin.begin() +
+                     ((unsigned int)end <= fin.len() ? end : fin.len()) :
+                     fin.end(), amps.begin(),
                      [](csnd::pv_bin f) { return f.amp(); });
       std::nth_element(amps.begin(), amps.begin() + n, amps.end());
       thrsh = amps[n];
@@ -189,7 +194,7 @@ struct TVConv : csnd::Plugin<1, 6> {
       ir.allocate(csound, fils);
       in.allocate(csound, fils);
       itnsp = insp.begin();
-      itrsp = insp.begin();
+      itrsp = irsp.begin();
       n = 0;
     } else {
       ir.allocate(csound, fils);
@@ -210,14 +215,15 @@ struct TVConv : csnd::Plugin<1, 6> {
     auto *frz2 = inargs(3);
     auto inc1 = csound->is_asig(frz1);
     auto inc2 = csound->is_asig(frz2);
+    MYFLT _0dbfs = csound->_0dbfs();
 
     for (auto &s : outsig) {
       if (*frz1 > 0)
-        itn[n] = *inp;
+        itn[n] = *inp/_0dbfs;
       if (*frz2 > 0)
-        itr[n] = *irp;
+        itr[n] = *irp/_0dbfs;
 
-      s = out[n] + saved[n];
+      s = (out[n] + saved[n])*_0dbfs;
       saved[n] = out[n + pars];
       if (++n == pars) {
         cmplx *ins, *irs, *ous = to_cmplx(out.data());
