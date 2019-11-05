@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 project(Csound)
 
+
 ENABLE_TESTING()
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
@@ -145,6 +146,28 @@ option(BUILD_INSTALLER "Build installer" OFF)
 option(BUILD_TESTS "Build tests" ON)
 option(USE_GIT_COMMIT "Show the git commit in version information" ON)
 option(REQUIRE_PTHREADS "For non-Windows systems, set whether Csound will use threads or not" ON)
+
+
+if (EMSCRIPTEN)
+message(STATUS "Emscripten Build")
+set(BUILD_PLUGINS_DIR "plugins")
+set(USE_COMPILER_OPTIMIZATIONS 0)
+set(WASM 1)
+set(INIT_STATIC_MODULES 0)
+set(USE_DOUBLE 0)
+set(BUILD_MULTI_CORE 0)
+set(BUILD_JACK_OPCODES 0)
+set(HAVE_BIG_ENDIAN 0)
+set(CMAKE_16BIT_TYPE "unsigned short")
+set(HAVE_STRTOD_L 0)
+# set(BUILD_STATIC_LIBRARY YES)
+set(HAVE_ATOMIC_BUILTIN 0)
+set(HAVE_SPRINTF_L NO)
+set(USE_GETTEXT NO)
+set(LIBSNDFILE_LIBRARY ${CMAKE_SOURCE_DIR}/Emscripten/deps/lib/libsndfile.a)
+set(SNDFILE_H_PATH ${CMAKE_SOURCE_DIR}/Emscripten/deps/include)
+endif()
+
 
 # Include this after the install path definitions so we can override them here.
 # Also after function definitions so we can use them there
@@ -954,6 +977,10 @@ set(mp3in_SRCS
 
 list(APPEND libcsound_SRCS ${stdopcod_SRCS} ${cs_pvs_ops_SRCS} ${oldpvoc_SRCS} ${mp3in_SRCS})
 
+# if (EMSCRIPTEN)
+# list(APPEND libcsound_SRCS Emscripten/src/CsoundObj.c Emscripten/src/FileList.c)
+# endif()
+
 if(INIT_STATIC_MODULES)
     set(static_modules_SRCS
         Top/init_static_modules.c
@@ -1105,7 +1132,11 @@ if(APPLE)
     set(libcsound_SRCS "${libcsound_SRCS};${csheaders};${H_headers};${CMAKE_CURRENT_BINARY_DIR}/include/float-version.h")
 endif()
 
+if (NOT EMSCRIPTEN) 
 add_library(${CSOUNDLIB} SHARED ${libcsound_SRCS})
+else()
+add_library(${CSOUNDLIB} STATIC ${libcsound_SRCS})
+endif()
 set_target_properties(${CSOUNDLIB} PROPERTIES
     SOVERSION ${APIVERSION})
 
@@ -1308,6 +1339,13 @@ if(APPLE AND NOT IOS)
     list(APPEND libcsound_LIBS ${MATH_LIBRARY} dl ${ACCELERATE_LIBRARY})
 endif()
 
+if (EMSCRIPTEN)
+set(
+    libcsound_CFLAGS
+    "${libcsound_CFLAGS} -s \"BINARYEN_METHOD='native-wasm'\"  -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ENVIRONMENT=web,worker -s MODULARIZE=1 -s SINGLE_FILE=1 -s BINARYEN_ASYNC_COMPILATION=0 -s ASSERTIONS=0 -s EXPORT_NAME=\"'libSine'\" -o libcsound.js" 
+    )
+endif()
+
 if(WIN32)
     add_definitions(-DWIN32)
 endif()
@@ -1394,6 +1432,8 @@ set_target_properties(${CSOUNDLIB} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${BUILD_LIB_DIR})
 
 if(BUILD_STATIC_LIBRARY)
+
+  
     add_library(${CSOUNDLIB_STATIC} STATIC ${libcsound_SRCS})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES OUTPUT_NAME ${CSOUNDLIB})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES PREFIX "lib")
@@ -1426,7 +1466,7 @@ endif()
 ## set_target_properties(mkdb PROPERTIES LINKER_LANGUAGE C)
 ## endif()
 
-
+if (NOT EMSCRIPTEN)
 add_subdirectory(Opcodes)
 add_subdirectory(InOut)
 add_subdirectory(interfaces)
@@ -1439,7 +1479,7 @@ add_subdirectory(tests/c)
 add_subdirectory(tests/commandline)
 add_subdirectory(tests/regression)
 add_subdirectory(tests/soak)
-
+endif()
 # uninstall target
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"

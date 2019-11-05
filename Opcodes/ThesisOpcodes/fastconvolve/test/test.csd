@@ -9,8 +9,11 @@ ksmps = 512
 nchnls = 2
 0dbfs = 1
 
-gSpathL = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Victor/test-left/EvaluationGrid_GeneralTF.sofa"
-gSpathR = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Victor/test-right/EvaluationGrid_GeneralTF.sofa"
+gSpathL = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Brian/left/EvaluationGrid_GeneralTF.sofa"
+gSpathR = "/Users/eddyc/Documents/Software/HRTF/Mesh2HRTF/Meshes/Brian/right/EvaluationGrid_GeneralTF.sofa"
+
+gSpathL = "/Users/eddyc/Documents/Software/HRTF/MATLAB/kemar.sofa"
+gSpathR = "/Users/eddyc/Documents/Software/HRTF/MATLAB/kemar.sofa"
 instr 1
 
     kin init 0
@@ -30,10 +33,10 @@ instr 1
         kin = kin + 1
 
     endif
-    ; aoutL fastconvolve ain, gSpathL, kline, "IR", 0
-    ; aoutR fastconvolve ain, gSpathR, kline, "IR", 1
-    aoutL fastconvolve ain, gSpathL, kline, "TF", 0
-    aoutR fastconvolve ain, gSpathR, kline, "TF", 0
+    aoutL fastconvolve ain, gSpathL, kline, "IR", 0
+    aoutR fastconvolve ain, gSpathR, kline, "IR", 1
+    ; aoutL fastconvolve ain, gSpathL, kline, "TF", 0
+    ; aoutR fastconvolve ain, gSpathR, kline, "TF", 0
     outs(aoutL, aoutR);
 endin
 
