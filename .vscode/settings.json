@@ -44,9 +44,5 @@
         "forward_list": "cpp",
         "list": "cpp"
     },
-    "terminal.explorerKind": "external",
-    "clangd.arguments": [
-        "--compile-commands-dir=/Users/eddyc/Documents/Software/Csound Projects/csound/build",
-        "--query-driver=/Library/Developer/CommandLineTools"
-    ]
+    "terminal.explorerKind": "external"
 }

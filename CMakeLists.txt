@@ -1452,6 +1452,10 @@ if(BUILD_STATIC_LIBRARY)
         ARCHIVE DESTINATION "${LIBRARY_INSTALL_DIR}")
 endif()
 
+if (EMSCRIPTEN)
+include(${CMAKE_CURRENT_SOURCE_DIR}/wasm/WASM.cmake)
+endif()
+
 # VL -- this seems to be a duplicate instruction
 # and it's breaking the build. See lines 1088-95
 #install(TARGETS ${CSOUNDLIB}
