@@ -5,14 +5,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 project(Csound)
 
-
 ENABLE_TESTING()
 
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 set(CMAKE_COMPILER_IS_CLANG 1)
 endif()
 
-message(STATUS "Csound directory: ${CMAKE_HOME_DIRECTORY}")
+message(STATUS "${CMAKE_HOME_DIRECTORY}")
 
 # C++11 needed
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -37,8 +36,7 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CMakePushCheckState)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
-message(STATUS "CMake module path: ${CMAKE_MODULE_PATH}")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # Utility to munge with items in a list.
 #
@@ -147,28 +145,6 @@ option(BUILD_TESTS "Build tests" ON)
 option(USE_GIT_COMMIT "Show the git commit in version information" ON)
 option(REQUIRE_PTHREADS "For non-Windows systems, set whether Csound will use threads or not" ON)
 
-
-if (EMSCRIPTEN)
-message(STATUS "Emscripten Build")
-set(BUILD_PLUGINS_DIR "plugins")
-set(USE_COMPILER_OPTIMIZATIONS 0)
-set(WASM 1)
-set(INIT_STATIC_MODULES 0)
-set(USE_DOUBLE 0)
-set(BUILD_MULTI_CORE 0)
-set(BUILD_JACK_OPCODES 0)
-set(HAVE_BIG_ENDIAN 0)
-set(CMAKE_16BIT_TYPE "unsigned short")
-set(HAVE_STRTOD_L 0)
-# set(BUILD_STATIC_LIBRARY YES)
-set(HAVE_ATOMIC_BUILTIN 0)
-set(HAVE_SPRINTF_L NO)
-set(USE_GETTEXT NO)
-set(LIBSNDFILE_LIBRARY ${CMAKE_SOURCE_DIR}/Emscripten/deps/lib/libsndfile.a)
-set(SNDFILE_H_PATH ${CMAKE_SOURCE_DIR}/Emscripten/deps/include)
-endif()
-
-
 # Include this after the install path definitions so we can override them here.
 # Also after function definitions so we can use them there
 # Also after user options so that the default values don't overwrite the custom files values
@@ -200,7 +176,7 @@ endif()
 endif()
 
 if(APPLE)
-list(APPEND CMAKE_REQUIRED_INCLUDES "time.h")
+set(CMAKE_REQUIRED_INCLUDES time.h)
 CHECK_FUNCTION_EXISTS(clock_gettime CLOCK_GETTIME)
 if(${CLOCK_GETTIME})
  message(STATUS  "clock_gettime() found")
@@ -235,7 +211,16 @@ execute_process (
 
 SET(PYTHON_MODULE_INSTALL_DIR ${PYTHON_SITE_PACKAGES} CACHE PATH "Python module install dir")
 
-set(JAVA_MODULE_INSTALL_DIR ${LIBRARY_INSTALL_DIR} CACHE PATH "Java module install dir")
+
+if(APPLE) 
+  get_filename_component(JAVA_MODULE_INSTALL_DIR_DEFAULT "~/Library/Java/Extensions" ABSOLUTE)
+else()
+  set(JAVA_MODULE_INSTALL_DIR_DEFAULT ${LIBRARY_INSTALL_DIR})
+endif()
+
+set(JAVA_MODULE_INSTALL_DIR ${JAVA_MODULE_INSTALL_DIR_DEFAULT} CACHE PATH "Java module install dir")
+message(STATUS "JAVA_MODULE_INSTALL_DIR: ${JAVA_MODULE_INSTALL_DIR}")
+
 set(LUA_MODULE_INSTALL_DIR ${LIBRARY_INSTALL_DIR} CACHE PATH "Lua module install dir")
 
 # VL this is breaking CUDA compilation. It's not necessary
@@ -251,6 +236,11 @@ if(WIN32 AND NOT MSVC)
     endif()
 
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--add-stdcall-alias")
+endif()
+
+if(MSVC)
+  include_directories(${PROJECT_SOURCE_DIR}/msvc/include)
+  list(APPEND CMAKE_REQUIRED_INCLUDES "${PROJECT_SOURCE_DIR}/msvc/include;${PROJECT_SOURCE_DIR}/msvc/deps/include")
 endif()
 
 if(WIN32)
@@ -477,7 +467,6 @@ if(APPLE)
     if(BUILD_INSTALLER)
        	set(CS_FRAMEWORK_FULL_PATH "/Library/Frameworks/${CSOUNDLIB}.framework/Versions/${APIVERSION}/Resources/Opcodes64")
     else()
-        get_filename_component(JAVA_MODULE_INSTALL_DIR "~/Library/Java/Extensions" ABSOLUTE)
         get_filename_component(CS_FRAMEWORK_FULL_PATH ${PLUGIN_INSTALL_DIR} ABSOLUTE)
     endif()
 
@@ -524,7 +513,12 @@ SET(BUILD_SHARED_LIBS ON)
 ## HEADER/LIBRARY/OTHER CHECKS ##
 
 # First, required stuff
-find_library(LIBSNDFILE_LIBRARY NAMES sndfile libsndfile-1 libsndfile)
+if (MSVC)
+  find_library(LIBSNDFILE_LIBRARY NAMES sndfile libsndfile-1 libsndfile)
+else()
+  find_library(LIBSNDFILE_LIBRARY sndfile libsndfile-1)
+endif()
+
 
 if(NOT LIBSNDFILE_LIBRARY)
     message(FATAL_ERROR "Csound requires the sndfile library")
@@ -600,7 +594,7 @@ if(NOT MSVC AND REQUIRE_PTHREADS)
   endif()
 
   #FIXME this variable is for required include directories, possible bug
-  list(APPEND CMAKE_REQUIRED_INCLUDES pthread.h)
+  set(CMAKE_REQUIRED_INCLUDES pthread.h)
   if (NOT HAIKU)
     set(CMAKE_REQUIRED_LIBRARIES pthread)
   endif()
@@ -626,7 +620,7 @@ endif()
 
 find_library(VORBISFILE_LIBRARY vorbisfile)
 check_include_file(libintl.h LIBINTL_HEADER)
-find_package(Eigen3 3.3 NO_MODULE)
+find_path(EIGEN3_INCLUDE_PATH eigen3/Eigen/Dense)
 find_package(GMM)
 find_library(LIBINTL_LIBRARY intl)
 find_package(Gettext)
@@ -977,10 +971,6 @@ set(mp3in_SRCS
 
 list(APPEND libcsound_SRCS ${stdopcod_SRCS} ${cs_pvs_ops_SRCS} ${oldpvoc_SRCS} ${mp3in_SRCS})
 
-# if (EMSCRIPTEN)
-# list(APPEND libcsound_SRCS Emscripten/src/CsoundObj.c Emscripten/src/FileList.c)
-# endif()
-
 if(INIT_STATIC_MODULES)
     set(static_modules_SRCS
         Top/init_static_modules.c
@@ -1132,11 +1122,7 @@ if(APPLE)
     set(libcsound_SRCS "${libcsound_SRCS};${csheaders};${H_headers};${CMAKE_CURRENT_BINARY_DIR}/include/float-version.h")
 endif()
 
-if (NOT EMSCRIPTEN) 
 add_library(${CSOUNDLIB} SHARED ${libcsound_SRCS})
-else()
-add_library(${CSOUNDLIB} STATIC ${libcsound_SRCS})
-endif()
 set_target_properties(${CSOUNDLIB} PROPERTIES
     SOVERSION ${APIVERSION})
 
@@ -1339,13 +1325,6 @@ if(APPLE AND NOT IOS)
     list(APPEND libcsound_LIBS ${MATH_LIBRARY} dl ${ACCELERATE_LIBRARY})
 endif()
 
-if (EMSCRIPTEN)
-set(
-    libcsound_CFLAGS
-    "${libcsound_CFLAGS} -s \"BINARYEN_METHOD='native-wasm'\"  -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ENVIRONMENT=web,worker -s MODULARIZE=1 -s SINGLE_FILE=1 -s BINARYEN_ASYNC_COMPILATION=0 -s ASSERTIONS=0 -s EXPORT_NAME=\"'libSine'\" -o libcsound.js" 
-    )
-endif()
-
 if(WIN32)
     add_definitions(-DWIN32)
 endif()
@@ -1432,8 +1411,6 @@ set_target_properties(${CSOUNDLIB} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${BUILD_LIB_DIR})
 
 if(BUILD_STATIC_LIBRARY)
-
-  
     add_library(${CSOUNDLIB_STATIC} STATIC ${libcsound_SRCS})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES OUTPUT_NAME ${CSOUNDLIB})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES PREFIX "lib")
@@ -1452,10 +1429,6 @@ if(BUILD_STATIC_LIBRARY)
         ARCHIVE DESTINATION "${LIBRARY_INSTALL_DIR}")
 endif()
 
-if (EMSCRIPTEN)
-include(${CMAKE_CURRENT_SOURCE_DIR}/wasm/WASM.cmake)
-endif()
-
 # VL -- this seems to be a duplicate instruction
 # and it's breaking the build. See lines 1088-95
 #install(TARGETS ${CSOUNDLIB}
@@ -1470,7 +1443,7 @@ endif()
 ## set_target_properties(mkdb PROPERTIES LINKER_LANGUAGE C)
 ## endif()
 
-if (NOT EMSCRIPTEN)
+
 add_subdirectory(Opcodes)
 add_subdirectory(InOut)
 add_subdirectory(interfaces)
@@ -1483,7 +1456,7 @@ add_subdirectory(tests/c)
 add_subdirectory(tests/commandline)
 add_subdirectory(tests/regression)
 add_subdirectory(tests/soak)
-endif()
+
 # uninstall target
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"

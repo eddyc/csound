@@ -12,6 +12,8 @@ if(EMSCRIPTEN)
   set(HAVE_ATOMIC_BUILTIN 0)
   set(HAVE_SPRINTF_L NO)
   set(USE_GETTEXT)
+  set(REQUIRE_PTHREADS NO)
+  set(EMSCRIPTEN 1)
 
   function(download_file url filename)
 
@@ -41,10 +43,16 @@ if(EMSCRIPTEN)
                         PROPERTIES OUTPUT_NAME libcsound)
   set(
     CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -s \"BINARYEN_METHOD='native-wasm'\"  -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ENVIRONMENT=web,worker -s MODULARIZE=1 -s SINGLE_FILE=1 -s BINARYEN_ASYNC_COMPILATION=0 -s ASSERTIONS=0 -s EXPORT_NAME=\"'libcsound'\""
+    "${CMAKE_C_FLAGS} --pre-js ${CMAKE_SOURCE_DIR}/wasm/prejs.js -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s \"BINARYEN_METHOD='native-wasm'\" -s ENVIRONMENT=web,worker -s MODULARIZE=1 -s SINGLE_FILE=1 -s BINARYEN_ASYNC_COMPILATION=0 -s ASSERTIONS=1  -s EXTRA_EXPORTED_RUNTIME_METHODS='[\"FS\", \"ccall\", \"cwrap\", \"Pointer_stringify\"]' -s RESERVED_FUNCTION_POINTERS=1 -s TOTAL_MEMORY=268435456 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s EXPORT_NAME=\"'libcsound'\""
     )
   target_compile_options(${CSOUNDLIB_STATIC_EMSCRIPTEN}
                          PRIVATE ${libcsound_CFLAGS})
   target_link_libraries(${CSOUNDLIB_STATIC_EMSCRIPTEN} ${libcsound_LIBS})
-
+  add_custom_command(
+    TARGET ${CSOUNDLIB_STATIC_EMSCRIPTEN} POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+            -E
+            copy
+            ${CMAKE_BUILD_RPATH}libcsound.js
+            ${CMAKE_SOURCE_DIR}/../csound-wasm-test/src/wasm/libcsound.js)
 endif()
