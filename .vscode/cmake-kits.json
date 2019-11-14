@@ -1,0 +1,9 @@
+[
+    {
+        "name": "Emscripten",
+        "toolchainFile": "/Users/eddyc/Documents/Software/emsdk/fastcomp/Emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "cmakeSettings": {
+            "CUSTOM_CMAKE": "/Users/eddyc/Documents/Software/csound/wasm/WASM.cmake"
+        }
+    }
+]

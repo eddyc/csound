@@ -156,6 +156,7 @@ else()
     message(STATUS "Not using Custom.cmake file.")
 endif()
 
+
 # in Release configuration, set NDEBUG
 if(${CMAKE_BUILD_TYPE} MATCHES "Release")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG")
@@ -361,6 +362,8 @@ else()
     endif()
 endif()
 
+
+
 if(MSVC)
   # Experimented with flags but did not make change performance results
   #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Oi /fp:fast /arch:AVX2")
@@ -518,7 +521,6 @@ if (MSVC)
 else()
   find_library(LIBSNDFILE_LIBRARY sndfile libsndfile-1)
 endif()
-
 
 if(NOT LIBSNDFILE_LIBRARY)
     message(FATAL_ERROR "Csound requires the sndfile library")
@@ -1243,9 +1245,7 @@ else()
     FRAMEWORK DESTINATION "${CS_FRAMEWORK_DEST}")
 endif()
 
-if(EMSCRIPTEN)
-  include_directories(emscripten/deps/libsndfile-1.0.25/src/)
-endif()
+
 
 set(libcsound_LIBS ${LIBSNDFILE_LIBRARY})
 if(REQUIRE_PTHREADS AND PTHREAD_LIBRARY)
@@ -1443,6 +1443,49 @@ endif()
 ## set_target_properties(mkdb PROPERTIES LINKER_LANGUAGE C)
 ## endif()
 
+if (EMSCRIPTEN) 
+
+function(download_file url filename)
+
+if(NOT EXISTS ${filename})
+  file(DOWNLOAD ${url} ${filename} TIMEOUT 60)
+  execute_process(COMMAND ${CMAKE_COMMAND}
+                          -E
+                          tar
+                          -xf
+                          ${filename}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+endfunction(download_file)
+
+download_file(https://github.com/eddyc/csound/releases/download/0.0.1/deps.zip
+            ./deps.zip)
+
+
+message(STATUS "libcsound sources = ${libcsound_SRCS}")
+list(APPEND libcsound_SRCS
+          ${CMAKE_CURRENT_SOURCE_DIR}/Emscripten/src/CsoundObj.c
+          ${CMAKE_CURRENT_SOURCE_DIR}/Emscripten/src/FileList.c)
+set(CSOUNDLIB_STATIC_EMSCRIPTEN "csound-static-emscripten")
+add_executable(${CSOUNDLIB_STATIC_EMSCRIPTEN} ${libcsound_SRCS})
+set_target_properties(${CSOUNDLIB_STATIC_EMSCRIPTEN}
+                      PROPERTIES OUTPUT_NAME libcsound)
+set(
+  CMAKE_C_FLAGS
+  "${CMAKE_C_FLAGS} --pre-js ${CMAKE_SOURCE_DIR}/wasm/prejs.js -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s \"BINARYEN_METHOD='native-wasm'\" -s ENVIRONMENT=worker -s MODULARIZE=1 -s SINGLE_FILE=1 -s BINARYEN_ASYNC_COMPILATION=0 -s ASSERTIONS=1  -s EXTRA_EXPORTED_RUNTIME_METHODS='[\"FS\", \"ccall\", \"cwrap\", \"Pointer_stringify\"]' -s RESERVED_FUNCTION_POINTERS=1 -s TOTAL_MEMORY=268435456 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s EXPORT_NAME=\"'libcsound'\""
+  )
+target_compile_options(${CSOUNDLIB_STATIC_EMSCRIPTEN}
+                       PRIVATE ${libcsound_CFLAGS})
+target_link_libraries(${CSOUNDLIB_STATIC_EMSCRIPTEN} ${libcsound_LIBS})
+add_custom_command(
+  TARGET ${CSOUNDLIB_STATIC_EMSCRIPTEN} POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -E
+          copy
+          ${CMAKE_BUILD_RPATH}libcsound.js
+          ${CMAKE_SOURCE_DIR}/../csound-wasm-test/src/wasm/libcsound.js)
+
+endif()
 
 add_subdirectory(Opcodes)
 add_subdirectory(InOut)
